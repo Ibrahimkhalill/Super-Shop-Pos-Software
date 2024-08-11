@@ -18,6 +18,15 @@
   overflow: hidden;
   background-color: var(--bodyColor);
 }
+.full_div_quotation ::-webkit-scrollbar {
+  width: 0.4vw;
+  background-color: var(--bg);
+  border-radius: 0.3vw;
+}
+.full_div_quotation ::-webkit-scrollbar-thumb {
+  width: 0.5vw;
+  background-color: rgb(233, 232, 232);
+}
 .conatiner_div_quotation {
   display: grid;
   grid-template-columns: 6fr 2.5fr;
@@ -256,6 +265,7 @@ th {
   color: #cac3c3;
   width: 100vw;
   font-size: 1vw;
+  border: none;
 }
 .headerTh {
   background-color: var(--btnColor);

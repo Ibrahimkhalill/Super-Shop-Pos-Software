@@ -7,7 +7,15 @@
   overflow: hidden;
   background-color: var(--bodyColor);
 }
-
+.full_div_employee_setup ::-webkit-scrollbar {
+  width: 0.4vw;
+  background-color: var(--bg);
+  border-radius: 0.3vw;
+}
+.full_div_employee_setup ::-webkit-scrollbar-thumb {
+  width: 0.5vw;
+  background-color: rgb(233, 232, 232);
+}
 /*================================= first_row_div_employee_setup=========================== */
 .first_row_div_employee_setup {
   box-shadow: var(--largeCardShadow);
@@ -185,8 +193,7 @@
   box-shadow: var(--smallCardShadow);
   border-radius: 2vh;
   transition: 0.5s;
-  padding-left: 1vw;
-  padding-right: 1vw;
+  padding: 0.5vw;
   column-gap: 1vw;
   width: 96vw;
   height: 32vh;
@@ -198,6 +205,7 @@
 .table-wrapper_employee_setup table {
   width: 100%;
   color: white;
+  border: none;
 }
 
 .employee_table_th {
@@ -216,12 +224,14 @@
   background-color: #f0f0f0;
   font-size: 2vw;
 }
-
+.employee_tr:hover {
+  background-color: #b1afaf;
+}
 .tab_selected {
-  background-color: white;
+  background-color: #06341b !important;
 }
 .tab_selected > .employee_table_td {
-  font-size: 1.1vw;
+  color: white;
 }
 /*================================== Forth row div==================================================== */
 .forth_row_div_employee_setup {

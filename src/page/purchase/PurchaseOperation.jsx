@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from "react";
+/* eslint-disable react-hooks/exhaustive-deps */
+import React, { useState, useEffect, useRef } from "react";
 import "./purchases_operation.css";
 import { FcPrint } from "react-icons/fc";
 import { FaCartPlus } from "react-icons/fa";
@@ -6,7 +7,11 @@ import Save from "../../image/Save.png";
 import { Modal } from "antd";
 import { ToastContainer, toast } from "react-toastify";
 import axios from "axios";
-
+import reset from "../../image/reset.png";
+import { useReactToPrint } from "react-to-print";
+import { ComponentToPrint } from "../../components/PurchaseInvoice";
+import Delete from "../../image/delete.png";
+import update from "../../image/Update.png";
 const PurchaseOperation = () => {
   const [category, setcategory] = useState("");
   const [product_code, setProductCode] = useState("");
@@ -18,20 +23,26 @@ const PurchaseOperation = () => {
   const [purchase_price, setPurchasePrice] = useState("");
   const [sale_price, setSalePrice] = useState("");
   const [quantity, setQuantity] = useState("");
+
   const [unitName, setUnitName] = useState("");
-  const [unitID, setUnitId] = useState("");
+  const [unitID, setUnitId] = useState(null);
   const [unit, setUnit] = useState("");
   const [warranty, setWarranty] = useState("");
   const [discount, setDiscount] = useState("");
-  const [todayDate, setTodayDate] = useState("");
-  const [saveData, setSaveData] = useState([]);
+  const [todayDate, setTodayDate] = useState(() => {
+    const today = new Date();
+    const formattedDate = today.toISOString().split("T")[0]; // Format the date as 'YYYY-MM-DD'
+    return formattedDate;
+  });
+  // eslint-disable-next-line no-unused-vars
+
   const [shopNameData, setShopNAmeData] = useState([]);
 
   const [supplierName, setSupplierName] = useState("");
   const [supplierNameID, setSupplierNameID] = useState("");
   const [Supplieraddress, setSupplierAddress] = useState("");
   const [Suppliermobile, setSupplierMobile] = useState("");
-
+  const [activeRowIndex, setActiveRowIndex] = useState(null);
   const [contributor_name, setContributorName] = useState("");
   const [address, setAddress] = useState("");
   const [mobile, setMobile] = useState("");
@@ -51,19 +62,50 @@ const PurchaseOperation = () => {
   const [tableData, setTabledata] = useState([]);
   const [totalAmount, setTotalAmount] = useState("");
   const [NettotalAmount, setNetTotalAmount] = useState("");
-  const [totalDiscount, setTotalDiscount] = useState("");
-  const [vat, setVat] = useState("");
+
+  const [vat, setVat] = useState(0);
   const [vatID, setVatID] = useState("");
   const [rate, setRate] = useState("");
   const [paid, setPaid] = useState("");
   const [ischecked, setIschecked] = useState(false);
   const [error, setError] = useState("");
+  const [SupplierError, setSupplierError] = useState("");
+  const [selectedRows, setSelectedRows] = useState(new Set());
+  const [brandError, setBrandError] = useState("");
+  const [vatError, setVatError] = useState("");
+  const [unitError, setunitError] = useState("");
   const [invoice, setInvoice] = useState("");
   const [product_trace_id, setProductTraceId] = useState("");
+  const [paymentType, setPaymentType] = useState("Cash");
   const [payment_id, setPaymentId] = useState("");
-  const axiosInstance = axios.create({baseURL: process.env.REACT_APP_BASE_URL,})
+  const [productFetchData, setProductFetchData] = useState([]);
+  const [duePaid, setDuePaid] = useState("");
+  const componentRef = useRef();
+  const [contributorNameError, setcontributorNameError] = useState("");
+  const [addressError, setAddressError] = useState("");
+  const [mobileError, setMobileError] = useState("");
+  const [scrollPosition, setScrollPosition] = useState(0);
+  const [filterSupplierData, setFilterSupplierData] = useState([]);
+  const [searchSupplierName, setSearchSupplierName] = useState("");
+  const tableRef = useRef();
+  //date
 
- const Employee = localStorage.getItem("username")
+  const today = new Date();
+  const hours = String(today.getHours()).padStart(2, "0");
+  const minutes = String(today.getMinutes()).padStart(2, "0");
+  const seconds = String(today.getSeconds()).padStart(2, "0");
+
+  const formattedDateTime = `${todayDate} ${hours}:${minutes}:${seconds}`;
+
+  const handlePrint = useReactToPrint({
+    content: () => componentRef.current,
+  });
+
+  const axiosInstance = axios.create({
+    baseURL: process.env.REACT_APP_BASE_URL,
+  });
+
+  const Employee = localStorage.getItem("username");
 
   const newWidth = {
     width: "7.vw",
@@ -72,9 +114,11 @@ const PurchaseOperation = () => {
   const Color = {
     background: "rgba(6, 52, 27, 1)",
   };
+
   useEffect(() => {
-    document.title = "Purchase Operation";
+    document.title = "Purchase ";
   });
+
   const showModal = () => {
     setVisible(true);
   };
@@ -87,144 +131,160 @@ const PurchaseOperation = () => {
   const showVatModal = () => {
     setVatVisible(true);
   };
+
   useEffect(() => {
     if (paymentTypeData && paymentTypeData.length > 0) {
       const cashPayment = paymentTypeData.find(
-        (data) => data.payment_type === "Cash"
+        (data) => data.payment_type === paymentType
       );
       if (cashPayment) {
         setPaymentId(cashPayment.payment_type_id);
       }
     }
-  }, [paymentTypeData]);
+  }, [paymentType, paymentTypeData]);
 
-  const today = new Date();
-  const formattedDate = today.toISOString();
   const fetchBrandData = async () => {
     try {
-      const response = await axiosInstance.get(
-        "/api/brand/getAll"
-      );
+      const response = await axiosInstance.get("/brand/getAll");
 
       setBrandData(response.data);
     } catch (error) {
       console.error("Error fetching data:", error);
     }
   };
-  useEffect(() => {
-    const today = new Date();
-    const formattedDate = today.toISOString().substr(0, 10);
-    setTodayDate(formattedDate);
+  const fetchDataUnit = async () => {
+    try {
+      const response = await axiosInstance.get("/unit/getAll");
+      setUnitData(response.data);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
+  };
+  const fetchSupplierData = async (signal) => {
+    if (filterSupplierData.length > 0) {
+      setSupplierData(filterSupplierData);
+      HandleResetSupplier();
+    }
+    try {
+      const response = await axiosInstance.get("/contributorname/getAll", {
+        signal,
+      });
+      const filtered = response.data.filter(
+        (item) => item && item.contributor_type_id === 2
+      );
+      setData(filtered);
+      setFilterSupplierData(filtered);
+      HandleResetSupplier();
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
+  };
+  const fetchVatData = async (signal) => {
+    try {
+      const response = await axiosInstance.get("/tax/getAll", { signal });
 
-    const fetchData = async () => {
+      setVatData(response.data);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
+  };
+  const fetchProductData = async (signal) => {
+    try {
+      const response = await axiosInstance.get("/producttraces/getAll", {
+        signal,
+      });
+      setProductFetchData(response.data);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
+  };
+
+  const handleDataFetchTransaction = async (signal) => {
+    try {
+      // Make an HTTP GET request using axiosInstance
+      const filteredTransactions = await axiosInstance.get(
+        `transactionsRouter/getAllTransactionByFiltered?operation_type_id=2`,
+        { signal }
+      );
+
+      setTransactionData(filteredTransactions.data);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
+  };
+  useEffect(() => {
+    const controller = new AbortController();
+    handleDataFetchTransaction(controller.signal);
+
+    return () => {
+      controller.abort();
+    };
+  }, []);
+  useEffect(() => {
+    const fetchData = async (signal) => {
       try {
-        const response = await axiosInstance.get(
-          "/api/paymenttypes/getAll"
-        );
+        const response = await axiosInstance.get("/paymenttypes/getAll", {
+          signal,
+        });
         setPaymentTypeData(response.data);
       } catch (error) {
         console.error("Error fetching data:", error);
       }
     };
-    const fetchDataUnit = async () => {
+
+    const fetchProductdata = async (signal) => {
       try {
-        const response = await axiosInstance.get(
-          "/api/unit/getAll"
-        );
-        setUnitData(response.data);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      }
-    };
-    const fetchSupplierData = async () => {
-      try {
-        const response = await axiosInstance.get(
-          "/api/contributorname/getAll"
-        );
-        setData(response.data);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      }
-    };
-    const fetchProductdata = async () => {
-      try {
-        const response = await axiosInstance.get(
-          "/api/producttraces/getAll"
-        );
+        const response = await axiosInstance.get("/producttraces/getAll", {
+          signal,
+        });
 
         setProductData(response.data);
       } catch (error) {
         console.error("Error fetching data:", error);
       }
     };
-   
-    const fetchShop = async () => {
+
+    const fetchShop = async (signal) => {
       try {
-        const response = await axiosInstance.get(
-          "/api/shopname/getAll"
-        );
+        const response = await axiosInstance.get("/shopname/getAll", {
+          signal,
+        });
 
         setShopNAmeData(response.data);
       } catch (error) {
         console.error("Error fetching data:", error);
       }
     };
-    const handleDataFetchTransaction = async () => {
-      try {
-        // Make an HTTP GET request using axiosInstance
-        const response = await axiosInstance.get(
-          "/api/transactionsRouter/getAllTransactions"
-        );
 
-        const filteredTransactions = response.data.filter(
-          (transaction) =>
-            transaction.OperationType &&
-            transaction.OperationType.operation_name === "Purchase"
-        );
+    const controller = new AbortController();
+    fetchSupplierData(controller.signal);
+    fetchData(controller.signal);
+    fetchDataUnit(controller.signal);
+    fetchProductdata(controller.signal);
+    fetchBrandData(controller.signal);
+    fetchShop(controller.signal);
+    fetchVatData(controller.signal);
+    fetchProductData(controller.signal);
 
-        setTransactionData(filteredTransactions);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      }
-    };
-    const fetchVatData = async () => {
-      try {
-        const response = await axiosInstance.get(
-          "/api/tax/getAll"
-        );
-
-        setVatData(response.data);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      }
+    return () => {
+      controller.abort();
     };
 
-    fetchSupplierData();
-    fetchData();
-    fetchDataUnit();
-    fetchProductdata();
-    fetchBrandData();
-    fetchShop();
-    handleDataFetchTransaction();
-    fetchVatData();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
-    const handleVatChange = () => {
-      const filteredData = VatData.find((item) => item.rate === vat);
-      setVatID(filteredData?.tax_id);
-    };
-    handleVatChange();
+    const filteredData = VatData && VatData.find((item) => item.rate === vat);
+    setVatID(filteredData?.tax_id);
   }, [vat, VatData]);
 
   useEffect(() => {
     if (brand) {
       const filteredData = brandData.find((item) => item.brand_name === brand);
       setBrandID(filteredData?.brand_id);
-      console.log(filteredData?.brand_id);
     }
     const fiterBrand = unitData.find((item) => item.unit === unitName);
+
     setUnitId(fiterBrand?.unit_id);
   }, [brand, brandData, shopNameData, unitData, unitName]);
 
@@ -236,15 +296,21 @@ const PurchaseOperation = () => {
 
   const handleCancel = () => {
     setVisible(false);
+    HandleResetSupplier();
   };
   const handleBrandCancel = () => {
     setBrandVisible(false);
+    setBrandError("");
+    setBrand_name("");
   };
   const handleVatCancel = () => {
     setVatVisible(false);
+    setVatError("");
   };
   const handleUnitCancel = () => {
     setUnitVisible(false);
+    setunitError("");
+    setUnit("");
   };
 
   useEffect(() => {
@@ -270,7 +336,7 @@ const PurchaseOperation = () => {
       const result = produtData.find(
         (item) => item.product_code === product_code
       );
-      console.log(result);
+
       if (!ischecked) {
         if (result) {
           setProductTraceId(result.product_trace_id);
@@ -288,26 +354,14 @@ const PurchaseOperation = () => {
   }, [product_code, produtData, ischecked]);
 
   useEffect(() => {
-    const generateInvoiceNumber = () => {
-      const validInvoiceNumbers = transactionData
-        .map((item) => parseInt(item.invoice_no))
-        .filter((number) => !isNaN(number)); // Filter out NaN values
+    if (tableData.length === 0) {
+      setPaid("");
+    }
+  }, [tableData.length === 0]);
 
-      if (validInvoiceNumbers.length === 0) {
-        // If there are no valid invoice numbers, start from 1
-        setInvoice(1);
-      } else {
-        // Find the maximum invoice number from valid invoice numbers
-        const maxInvoiceNumber = Math.max(...validInvoiceNumbers);
-        // Increment the maximum invoice number by 1 for the new entry
-        setInvoice(maxInvoiceNumber + 1);
-      }
-    };
-    generateInvoiceNumber();
-  }, [transactionData]);
-
-  const itemTotal = parseInt(purchase_price) * parseInt(quantity) || 0;
-  const discountAmount = itemTotal * (parseInt(discount) / 100);
+  const itemTotal =
+    Math.round(parseFloat(purchase_price) * parseFloat(quantity)) || 0;
+  const discountAmount = itemTotal * (parseFloat(discount) / 100);
   const totalWithDiscount = Math.round(itemTotal - discountAmount) || itemTotal;
 
   useEffect(() => {
@@ -320,22 +374,33 @@ const PurchaseOperation = () => {
     }
   }, [vat, totalAmount]);
 
-  // const handleReset = () => {
-  //   setProductCode("");
-  //   setBrand("");
-  //   setPurchasePrice("");
-  //   setQuantity("");
-  //   setUnitName("");
-  //   setDiscount("");
-  //   setSalePrice("");
-  //   setWarranty("");
-  //   setSupplierName("")
-  //   setVat("")
-  //   setPaid("")
-  //   setTabledata([])
-  //   setSaveData([])
-    
-  // };
+  ///reset all
+
+  const handleReset = () => {
+    setProductCode("");
+    setProductName("");
+    setProductType("");
+    setcategory("");
+    setBrand("");
+    setPurchasePrice("");
+    setQuantity("");
+    setDiscount("");
+    setSalePrice("");
+    setWarranty("");
+    setSupplierName("");
+    setVat("");
+    setPaid("");
+    setTabledata([]);
+
+    setSupplierName("");
+    setPaymentType("");
+    setVat(0);
+    setUnitName("");
+    setUnitId(null);
+    setError("");
+  };
+
+  /// add to table
 
   const AddToCart = () => {
     if (
@@ -344,7 +409,6 @@ const PurchaseOperation = () => {
       quantity === "" &&
       sale_price === ""
     ) {
-      toast.warning("Don't leave empty field");
       setError("Don't leave empty field");
       return;
     }
@@ -358,6 +422,10 @@ const PurchaseOperation = () => {
       return;
     }
     if (quantity === "") {
+      setError("Don't leave empty field");
+      return;
+    }
+    if (unitName === "") {
       setError("Don't leave empty field");
       return;
     }
@@ -382,17 +450,25 @@ const PurchaseOperation = () => {
       salePrice: sale_price,
       unitID: unitID,
       brandId: brandID,
+      product_trace_id: product_trace_id,
     };
 
     setTabledata((prevTableData) => [...prevTableData, newItem]);
-    setProductCode("");
-    setBrand("");
-    setPurchasePrice("");
-    setQuantity("");
-    setUnitName("");
-    setDiscount("");
-    setSalePrice("");
-    setWarranty("");
+    if (ischecked) {
+      return;
+    } else {
+      setProductCode("");
+      setBrand("");
+      setPurchasePrice("");
+      setQuantity("");
+      setUnit(null);
+      setDiscount("");
+      setSalePrice("");
+      setWarranty("");
+      setUnitName("");
+      setUnitId(null);
+      setError("");
+    }
   };
 
   useEffect(() => {
@@ -401,108 +477,124 @@ const PurchaseOperation = () => {
         (accumulator, item) => accumulator + item.total,
         0
       );
-      setTotalAmount(parseInt(total, 10));
-      const totalDiscount = tableData.reduce(
-        (accumulator, item) => accumulator + parseInt(item.discount, 10),
-        0
-      );
-      setTotalDiscount(totalDiscount);
+      setTotalAmount(parseFloat(total, 10));
     } else {
       setTotalAmount(0);
     }
   }, [tableData]);
 
-  const due =
-    Math.round(parseInt(NettotalAmount) - parseInt(paid)) || NettotalAmount;
+  useEffect(() => {
+    if (paid) {
+      setDuePaid(parseFloat(NettotalAmount) - parseFloat(paid));
+    } else {
+      setDuePaid(NettotalAmount);
+    }
+  }, [NettotalAmount, paid]);
 
   //all save api
 
-  const handleSave = async () => {
-    
+  const handleSave = async (event) => {
+    if (event.detail > 1) {
+      return;
+    }
+    if (
+      tableData.length === 0 &&
+      (supplierName === "" || Supplieraddress === "")
+    ) {
+      setError("Don't leave empty field");
+      setSupplierError("Don't leave empty field");
+      return;
+    }
+    if (tableData.length === 0) {
+      setError("Don't leave empty field");
+      return;
+    }
+    if (supplierName === "") {
+      setSupplierError("Don't leave empty field");
+      return;
+    }
+    if (Supplieraddress === "") {
+      setSupplierError("Please give valid supplier name or Add supplier");
+      return;
+    }
+    if (paid < 0) {
+      toast.dismiss();
+      toast.warning("You Can't Paid 0 !", {
+        autoClose: 1000,
+      });
+      return;
+    }
+    const newTransactions =
+      tableData &&
+      tableData.map((item) => ({
+        invoice_no: invoice,
+        product_trace_id: item.product_trace_id,
+        quantity_no: item.quantity,
+        unit_id: item.unitID,
+        brand_id: item.brandId || null,
+        warranty: item.warranty,
+        tax_id: vatID || 0,
+        amount: NettotalAmount,
+        authorized_by_id: 1,
+        contributor_name_id: supplierNameID || null,
+        operation_type_id: 2,
+        date: formattedDateTime,
+        payment_type_id: payment_id || null,
+        paid: paid || 0,
+        employee_id: Employee,
+        purchase_price: item.purchase_price,
+        sale_price: item.salePrice,
+        discount: item.discount,
+        shop_name_id: 1,
+      }));
+
     try {
       const response = await axiosInstance.post(
-        "/api/transactionsRouter/postTransactionFromAnyPageBulk",
-        saveData,
+        "/transactionsRouter/postTransactionFromAnyPageBulk?operation_type_id=2",
+        newTransactions,
         {
           headers: {
             "Content-Type": "application/json",
           },
         }
       );
-      console.log("data update", JSON.stringify(saveData));
+
       if (response.status === 200) {
-        console.log(response.data);
-        setSaveData([]);
-        setTabledata([])
-        setPaid("")
-        setVat("")
-        
+        handleReset();
         toast.success("Data saved successfully!");
       } else {
         toast.error("Failed to save data");
-        setSaveData([]);
-        setTabledata([])
-        setPaid("")
-        setVat("")
       }
     } catch (error) {
       console.error(error);
       toast.error("Failed to save data. Please try again later");
-      setSaveData([]);
-      setTabledata([])
-      setPaid("")
-      setVat("")
     }
   };
- console.log(brandID);
 
-  const addTransaction = useCallback(async () => {
-    const newTransactions = tableData.map((item) => ({
-      invoice_no: invoice,
-      product_trace_id: product_trace_id,
-      quantity_no: item.quantity,
-      unit_id: item.unitID,
-      brand_id: brandID,
-      warranty: item.warranty,
-      tax_id: vatID || null,
-      amount: NettotalAmount,
-      authorized_by_id: 1,
-      contributor_name_id: supplierNameID,
-      operation_type_id: 2,
-      date: formattedDate,
-      payment_type_id: payment_id,
-      paid: paid,
-      employee_id: Employee,
-      purchase_price: item.purchase_price,
-      sale_price: item.salePrice,
-      discount: item.discount,
-      shop_name_id: 1,
-    }));
-    setSaveData((prevSaveData) => [...prevSaveData, ...newTransactions]);
-    
-  }, [tableData, invoice, product_trace_id, brandID, vatID, NettotalAmount, supplierNameID, formattedDate, payment_id, paid, Employee]);
-
-  useEffect(() => {
-    const saveDataNotEmpty = saveData.length > 0;
-    if (saveDataNotEmpty && supplierNameID) {
-      handleSave();
+  const saveBrandName = async (event) => {
+    if (brand_name === "") {
+      setBrandError("Can't leave empty field");
+      return;
     }
-   
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [saveData, supplierNameID]);
-
-  const handleButtonClick = async () => {
-    await addTransaction();
-  };
-
-  const saveBrandName = async () => {
-    try {
-      const response = await axiosInstance.post(
-        "/api/brand/postBrandFromAnyPage",
-        { brand_name }
+    if (event.detail > 1) {
+      return;
+    }
+    const brandName =
+      brandData &&
+      brandData.find(
+        (item) => item.brand_name.toLowerCase() === brand_name.toLowerCase()
       );
+    if (brandName) {
+      toast.warning("This Brand is already exist");
+      setBrand_name("");
+      return;
+    }
+    try {
+      const response = await axiosInstance.post("/brand/postBrandFromAnyPage", {
+        brand_name,
+      });
       if (response.status === 200) {
-        fetchBrandData()
+        fetchBrandData();
         setBrand_name("");
         toast.success("Brand name saved successfully!");
       } else {
@@ -513,47 +605,107 @@ const PurchaseOperation = () => {
     }
   };
 
-  const handlesaveUnit = async () => {
+  const handlesaveUnit = async (event) => {
+    if (unit === "") {
+      setunitError("Can't leave empty field");
+      return;
+    }
+    if (event.detail > 1) {
+      return;
+    }
+    const unitCheck =
+      unitData &&
+      unitData.find((item) => item.unit.toLowerCase() === unit.toLowerCase());
+    if (unitCheck) {
+      toast.warning("This Unit is already exist");
+      setUnit("");
+      return;
+    }
     try {
-      const response = await axiosInstance.post(
-        "/api/unit/postUnitFromAnyPage",
-        { unit }
-      );
+      const response = await axiosInstance.post("/unit/postUnitFromAnyPage", {
+        unit,
+      });
       if (response.status === 200) {
+        fetchDataUnit();
         setUnit("");
         toast.success("Unit Add successfully!");
       } else {
-        toast.error("Failed to save brand name");
+        toast.error("Failed to save unit ");
       }
     } catch (error) {
       console.error("Error saving Unit :", error);
     }
   };
-  const handlesaveVat = async () => {
+
+  const handlesaveVat = async (event) => {
+    if (rate === "") {
+      setVatError("Can't leave empty field");
+      return;
+    }
+    if (event.detail > 1) {
+      return;
+    }
+    const VatCheck = VatData && VatData.find((item) => item.rate === rate);
+    if (VatCheck) {
+      toast.warning("This Vat is already exist");
+      setRate("");
+      return;
+    }
     try {
-      const response = await axiosInstance.post(
-        "/api/tax/postTaxFromAnyPage",
-        { rate }
-      );
+      const response = await axiosInstance.post("/tax/postTaxFromAnyPage", {
+        rate,
+      });
       if (response.status === 200) {
+        fetchVatData();
         setRate("");
         toast.success("Vat Add successfully!");
       } else {
         toast.error("Failed to save Vat");
       }
     } catch (error) {
-      console.error("Error saving brand name:", error);
+      console.error("Error saving Vat:", error);
+      toast.error("Error saving Vat");
     }
   };
+  //save supplier
   const handleSaveSupplier = async () => {
+    if (setContributorName === "" && setAddress === "" && setMobile === "") {
+      toast.warning("Please fill all field");
+      return;
+    }
+    if (contributor_name === "" && (address === "") & (mobile === "")) {
+      setcontributorNameError("Can't leave empty field");
+      setAddressError("Can't leave empty field");
+      setMobileError("Can't leave empty field");
+      return;
+    }
+    if (contributor_name === "") {
+      setcontributorNameError("Can't leave empty field");
+
+      return;
+    }
+    if (address === "") {
+      setAddressError("Can't leave empty field");
+      return;
+    }
+    if (mobile === "") {
+      setMobileError("Can't leave empty field");
+      return;
+    }
     const contributor_type_id = 2;
 
     try {
       const response = await axiosInstance.post(
-        "/api/contributorname/postContributorNameFromAnyPage",
-        { contributor_name, address, mobile, contributor_type_id }
+        "/contributorname/postContributorNameFromAnyPage",
+        {
+          contributor_name: contributor_name.replace(/\s+/g, " ").trim(),
+          address,
+          mobile,
+          contributor_type_id,
+        }
       );
       if (response.status === 200) {
+        fetchSupplierData();
         setContributorName("");
         setAddress("");
         setMobile("");
@@ -565,24 +717,265 @@ const PurchaseOperation = () => {
       console.error("Error saving brand name:", error);
     }
   };
+  // delete supplier
+  const handleDeleteSupplier = async () => {
+    if (supplierId === null) {
+      alert("Please select row");
+      return;
+    }
+    const confirmDelete = window.confirm("Are you sure delete Supplier?");
+
+    if (confirmDelete) {
+      try {
+        const response = await axiosInstance.delete(
+          `contributorname/deleteContributorNameByID?contributor_name_id=${supplierId}`
+        );
+
+        if (response.status === 200) {
+          fetchSupplierData();
+          setSupplierId(null);
+
+          toast.success("Successfully deleted row");
+        } else {
+          console.log(`Error while deleting row`);
+        }
+      } catch (error) {
+        console.log(error.message);
+        alert(error.message);
+      }
+    } else {
+      console.log("ok");
+    }
+  };
+  // delete brand
+  const handleDeleteBrand = async () => {
+    if (brandId === null) {
+      alert("Please select row");
+      return;
+    }
+
+    const confirmDelete = window.confirm("Are you sure delete Brand?");
+
+    if (confirmDelete) {
+      try {
+        const response = await axiosInstance.delete(
+          `brand/deleteBrandByID?brand_id=${brandId}`
+        );
+
+        if (response.status === 200) {
+          fetchBrandData();
+          setBrandId(null);
+          toast.success("Successfully deleted row");
+        } else {
+          console.log(`Error while deleting row`);
+        }
+      } catch (error) {
+        console.log(error.message);
+        alert(error.message);
+      }
+    } else {
+      console.log("ok");
+    }
+  };
+  //delete unit
+  const handleDeleteUnit = async () => {
+    if (unitID === null) {
+      alert("Please select row");
+      return;
+    }
+
+    const confirmDelete = window.confirm("Are you sure delete Unit?");
+
+    if (confirmDelete) {
+      try {
+        const response = await axiosInstance.delete(
+          `unit/deleteUnitByID?unit_id=${unitID}`
+        );
+
+        if (response.status === 200) {
+          fetchDataUnit();
+          setUnitId(null);
+          toast.success("Successfully deleted row");
+        } else {
+          console.log(`Error while deleting row`);
+        }
+      } catch (error) {
+        console.log(error.message);
+        alert(error.message);
+      }
+    } else {
+      console.log("ok");
+    }
+  };
+  //update supplier
+  const handleupdateSupplier = async (event) => {
+    if (event.detail > 1) {
+      return;
+    }
+    if (supplierId === null) {
+      alert("Please select row");
+      return;
+    }
+
+    try {
+      const response = await axiosInstance.put(
+        `contributorname/updateContributorNameByID`,
+        {
+          contributor_name_id: supplierId,
+          contributor_name,
+          mobile,
+          address,
+        }
+      );
+
+      if (response.status === 200) {
+        fetchSupplierData();
+        setContributorName("");
+        setAddress("");
+        setMobile("");
+        toast.success("Successfully Update Supplier");
+      } else {
+        console.log(`Error updateing Supplier `);
+      }
+    } catch (error) {
+      console.log(error.message);
+      alert(error.message);
+    }
+  };
 
   const handlePaidChange = (e) => {
     const newPaid = parseFloat(e.target.value);
-    
-    if (newPaid > NettotalAmount  ) {
-      toast.warning("Paid amount cannot exceed Net Total.");
-    }
-    else if(newPaid <0){
-      toast.warning("Paid amount cannot Decrease 0.");
-    }
-    else{
+
+    if (newPaid > NettotalAmount) {
+      toast.dismiss();
+      toast.warning("Paid amount cannot exceed Net Total", {
+        autoClose: 1000,
+      });
+    } else if (newPaid < 0) {
+      toast.dismiss();
+      toast.warning("Paid amount cannot Decrease 0", {
+        autoClose: 1000,
+      });
+    } else {
       setPaid(newPaid);
+    }
+  };
+
+  // select supplier row
+
+  const [supplierId, setSupplierId] = useState(null);
+
+  const handleSupplierRow = (item) => {
+    if (supplierId === item.contributor_name_id) {
+      setSupplierId(null);
+
+      setContributorName("");
+      setAddress("");
+      setMobile("");
+    } else {
+      setSupplierId(item.contributor_name_id);
+      setScrollPosition(tableRef.current.scrollTop);
+      setContributorName(item.contributor_name);
+      setAddress(item.address);
+      setMobile(item.mobile);
+    }
+  };
+
+  const handleRowClick = (rowIndex) => {
+    const newSelectedRows = new Set(selectedRows);
+
+    if (newSelectedRows.has(rowIndex)) {
+      newSelectedRows.delete(rowIndex);
+      setActiveRowIndex(null); // If already selected, deselect it
+    } else {
+      newSelectedRows.clear(); // Clear all selected rows
+      newSelectedRows.add(rowIndex); // Select the clicked row
+      setActiveRowIndex(rowIndex);
+    }
+
+    setSelectedRows(newSelectedRows); // Update selected rows state
+  };
+
+  const deleteRows = (rowsToDelete) => {
+    const rowsSet = new Set(rowsToDelete);
+    const updatedItems = tableData.filter((item, index) => !rowsSet.has(index));
+    setTabledata(updatedItems);
+    setSelectedRows(new Set()); // Clear selected rows after deletion
+    setActiveRowIndex(null); // Clear active row index
+  };
+
+  // Function to handle keydown events
+  const handleKeyDown = (e) => {
+    if (e.key === "Delete") {
+      if (activeRowIndex === null) {
+        alert("Plaese select a row");
+        return;
+      }
+      const confirmDelete = window.confirm(
+        "Are you sure you want to delete this row?"
+      );
+      if (confirmDelete) {
+        deleteRows([...selectedRows]);
+      }
+    }
+  };
+
+  // Add event listener when the component mounts
+  useEffect(() => {
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown); // Remove event listener when component unmounts
+    };
+  }, [tableData, selectedRows, handleKeyDown]);
+
+  const handleCheckboxChange = () => {
+    setIschecked((prevState) => !prevState); // Toggle the isChecked state
+  };
+
+  useEffect(() => {
+    if (tableRef.current !== null) {
+      tableRef.current?.scrollTo({ top: scrollPosition });
+    }
+  }, [supplierData, scrollPosition]);
+
+  const [brandId, setBrandId] = useState(null);
+
+  const handleBrandRow = (item) => {
+    if (brandId === item.brand_id) {
+      setBrandId(null);
+    } else {
+      setBrandId(item.brand_id);
+    }
+  };
+
+  const HandleResetSupplier = () => {
+    setContributorName("");
+    setMobile("");
+    setAddress("");
+    setSupplierId(null);
+    setSearchSupplierName("");
+  };
+
+  /// search system supplier
+
+  const handleSupplierSearch = () => {
+    const filter = filterSupplierData?.filter((item) =>
+      item.contributor_name
+        .toLocaleLowerCase()
+        .includes(searchSupplierName.toLocaleLowerCase())
+    );
+    setData(filter);
+  };
+  const handleUnitRow = (item) => {
+    if (unitID === item.unit_id) {
+      setUnitId(null);
+    } else {
+      setUnitId(item.unit_id);
     }
   };
   return (
     <>
-      {" "}
-      <ToastContainer />
+      <ToastContainer position="top-center" autoClose={1000} />
       <div className="full_div">
         <div className="first_row_div">
           <div className="invisible_div">
@@ -605,8 +998,20 @@ const PurchaseOperation = () => {
                         style={{
                           borderColor:
                             error && product_code === "" ? "red" : "",
+                          fontSize: "0.9vw",
                         }}
+                        list="product_code_list"
                       />
+                      <datalist id="product_code_list">
+                        {productFetchData.length > 0 &&
+                          productFetchData.map((product, index) => {
+                            return (
+                              <option key={index}>
+                                {product.product_code}
+                              </option>
+                            );
+                          })}
+                      </datalist>
 
                       <div className="error_message">
                         {error && product_code === "" ? error : ""}
@@ -620,7 +1025,6 @@ const PurchaseOperation = () => {
                     <input
                       type="text"
                       value={category}
-                      onChange={(e) => setcategory(e.target.value)}
                       className="input_field_supershop_purchase_long"
                       style={{
                         borderColor: error && category === "" ? "red" : "",
@@ -628,7 +1032,7 @@ const PurchaseOperation = () => {
                     />
                     <div
                       className="error_message"
-                      style={{ marginLeft: "4.3vw" }}
+                      style={{ marginLeft: "3.3vw" }}
                     >
                       {error && category === "" ? error : ""}
                     </div>
@@ -640,7 +1044,6 @@ const PurchaseOperation = () => {
                     <input
                       type="text"
                       value={product_name}
-                      onChange={(e) => setProductName(e.target.value)}
                       className="input_field_supershop_purchase_long"
                       style={{
                         borderColor: error && product_name === "" ? "red" : "",
@@ -648,7 +1051,7 @@ const PurchaseOperation = () => {
                     />
                     <div
                       className="error_message"
-                      style={{ marginLeft: "4.3vw" }}
+                      style={{ marginLeft: "3.3vw" }}
                     >
                       {error && product_name === "" ? error : ""}
                     </div>
@@ -661,7 +1064,6 @@ const PurchaseOperation = () => {
                     <input
                       type="text"
                       value={product_type}
-                      onChange={(e) => setProductType(e.target.value)}
                       className="input_field_supershop_purchase_long"
                       style={{
                         borderColor: error && product_type === "" ? "red" : "",
@@ -669,7 +1071,7 @@ const PurchaseOperation = () => {
                     />
                     <div
                       className="error_message"
-                      style={{ marginLeft: "4.3vw" }}
+                      style={{ marginLeft: "3.3vw" }}
                     >
                       {error && product_name === "" ? error : ""}
                     </div>
@@ -744,29 +1146,35 @@ const PurchaseOperation = () => {
                         borderColor: error && quantity === "" ? "red" : "",
                       }}
                     />
-
-                    <input
+                    <select
                       type="text"
                       value={unitName}
                       onChange={(e) => {
                         setUnitName(e.target.value);
+
                         setError("");
                       }}
+                      style={{
+                        borderColor: error && unitName === "" ? "red" : "",
+                        color: "black",
+                      }}
                       className="unit_add_purchaes_opeartion"
-                      style={{ borderColor: error && unit === "" ? "red" : "" }}
-                      list="select_unit"
-                    />
+                    >
+                      <option value="" disabled selected>
+                        Select Unit
+                      </option>
+                      {unitData &&
+                        unitData.map((data, index) => (
+                          <option
+                            style={{ color: "black" }}
+                            key={index}
+                            value={data.unit}
+                          >
+                            {data.unit}
+                          </option>
+                        ))}
+                    </select>
 
-                    <datalist id="select_unit">
-                      {unitData.length > 0 &&
-                        unitData.map((unit, index) => {
-                          return (
-                            <option key={index} value={unit.unit}>
-                              {unit.unit}
-                            </option>
-                          );
-                        })}
-                    </datalist>
                     <button
                       className="brand_add_button"
                       onClick={ShowUnitModal}
@@ -775,9 +1183,11 @@ const PurchaseOperation = () => {
                     </button>
                     <div
                       className="error_message"
-                      style={{ marginLeft: "4.3vw" }}
+                      style={{ marginLeft: "3.3vw" }}
                     >
-                      {error && quantity === "" && unit === "" ? error : ""}
+                      {(error && quantity === "") || (error && unitName === "")
+                        ? error
+                        : ""}
                     </div>
                   </div>
 
@@ -833,7 +1243,7 @@ const PurchaseOperation = () => {
                     />
                     <div
                       className="error_message"
-                      style={{ marginLeft: "4.3vw" }}
+                      style={{ marginLeft: "3.3vw" }}
                     >
                       {error && sale_price === "" ? error : ""}
                     </div>
@@ -862,9 +1272,8 @@ const PurchaseOperation = () => {
               <div className="barcode_check_box_purchase">
                 <input
                   type="checkbox"
-                  onClick={() => setIschecked(true)}
-                  name=""
-                  id=""
+                  checked={ischecked}
+                  onChange={handleCheckboxChange}
                 />
                 Same Product (Multi Barcode)
               </div>
@@ -882,58 +1291,57 @@ const PurchaseOperation = () => {
               </div>
 
               <div className="customer_inner_div2">
-                <div className="input_field_long">
+                <div className="input_field_long_supplier">
                   <label className="label_field_supershop_purchase">Name</label>
-                  <select
+                  <input
                     type="text"
                     className="add_supplier_select_input"
+                    value={supplierName}
                     onChange={(e) => {
                       setSupplierName(e.target.value);
+                      setSupplierError("");
                     }}
                     style={{
-                      borderColor: error && product_name === "" ? "red" : "",
+                      borderColor:
+                        SupplierError &&
+                        (supplierName === "" || Supplieraddress === "")
+                          ? "red"
+                          : "",
                     }}
-                  >
-                    <option value="" redOnly>
-                      Please Select supplier
-                    </option>
-                    {supplierData.map((data) => (
-                      <option
-                        key={data.contributor_name}
-                        value={data.contributor_name}
-                      >
-                        {data.contributor_name}
-                      </option>
-                    ))}
-                  </select>
-                  
+                    list="list_supplier"
+                  />
+                  <datalist id="list_supplier">
+                    {supplierData.length > 0 &&
+                      supplierData.map((supplier, index) => {
+                        return (
+                          <option key={index}>
+                            {supplier.contributor_name}
+                          </option>
+                        );
+                      })}
+                  </datalist>
+
                   <button className="supplier_add_button" onClick={showModal}>
                     +
                   </button>
-                  <div
-                      className="error_message_supllier"
-                     
-                    >
-                      {error && supplierName === "" ? error : ""}
-                    </div>
+                  <div className="error_message_supllier">
+                    {SupplierError &&
+                    (supplierName === "" || Supplieraddress === "")
+                      ? SupplierError
+                      : ""}
+                  </div>
                 </div>
-                <div className="input_field_long">
+                <div className="input_field_long_supplier">
                   <label className="label_field_supershop_purchase">
                     Address
                   </label>
-                  <input
-                    className="input_field_supershop_purchase"
-                    value={Supplieraddress}
-                  />
+                  <input value={Supplieraddress} />
                 </div>
-                <div className="input_field_long">
+                <div className="input_field_long_supplier">
                   <label className="label_field_supershop_purchase">
                     Mobile
                   </label>
-                  <input
-                    className="input_field_supershop_purchase"
-                    value={Suppliermobile}
-                  />
+                  <input value={Suppliermobile} />
                 </div>
               </div>
             </fieldset>
@@ -964,7 +1372,11 @@ const PurchaseOperation = () => {
                 <tbody>
                   {tableData.length > 0 &&
                     tableData.map((row, index) => (
-                      <tr key={index}>
+                      <tr
+                        key={index}
+                        className={activeRowIndex === index ? "active-row" : ""}
+                        onClick={() => handleRowClick(index)}
+                      >
                         <td>{index + 1}</td>
                         <td>{row.category}</td>
                         <td>{row.product_code}</td>
@@ -1003,90 +1415,8 @@ const PurchaseOperation = () => {
             </div>
           </div>
         </div>
+
         <div className="second_row_div">
-          <div className="first_column_second_row">
-            <div className="first_column_second_row_input_field">
-              <div>
-                <div className="input_field_short_select">
-                  <label className="label_field_supershop_purchase">Shop</label>
-                  <select>
-                    {shopNameData &&
-                      shopNameData.map((shop) => (
-                        <option
-                          value={shop.shop_name_id}
-                          key={shop.shop_name_id}
-                        >
-                          {shop.shop_name}
-                        </option>
-                      ))}
-                  </select>
-                </div>
-                <div className="input_field_short_select1">
-                  <label className="label_field_supershop_purchase">
-                    Employee
-                  </label>
-                  <select>
-
-                    <option>{Employee}</option>
-                  </select>
-                </div>
-              </div>
-              <div>
-                <div className="input_field_short_date">
-                  <label className="label_field_supershop_purchase">
-                    Purchase Date
-                  </label>
-                  <input
-                    type="date"
-                    className="input_field_supershop_purchase_long"
-                    value={todayDate}
-                    onChange={(e) => setTodayDate(e.target.value)}
-                  />
-                </div>
-                <div className="input_field_short_select1">
-                  <label className="label_field_supershop_purchase">
-                    Payment Type
-                  </label>
-                  <select name="" id="">
-                    {paymentTypeData.map((data) => (
-                      <option value="">{data.payment_type}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            <div className="input_field_long">
-              <div
-                className="label_field_supershop_purchase"
-                style={{ boxShadow: "none" }}
-              >
-                Amount In Words:
-              </div>
-              <span style={{ fontWeight: "bold", width: "3vw" }}>
-                ..............................................
-              </span>
-            </div>
-            <div className="button_first_column_second_row">
-              <div className="save_button">
-                <button className=" button_supershop button1">
-                  <FcPrint className="print_icon" title="Print" />
-                </button>
-                Print
-              </div>
-
-              <div className="save_button">
-                <button
-                  className="button_supershop button2"
-                  onClick={handleButtonClick}
-                >
-                  <img src={Save} alt="" />
-                </button>
-                Save
-              </div>
-            </div>
-          </div>
-
           <div className="total_div_supershop_purchase">
             <div className="input_field_short_purchase">
               <label
@@ -1097,7 +1427,7 @@ const PurchaseOperation = () => {
               </label>
               <input type="number" style={newWidth} value={totalAmount} />
             </div>
-            <div className="input_field_short_purchase">
+            {/* <div className="input_field_short_purchase">
               <label
                 className="label_field_supershop_purchase"
                 style={newWidth}
@@ -1105,7 +1435,7 @@ const PurchaseOperation = () => {
                 Total Discount
               </label>
               <input type="number" style={newWidth} value={totalDiscount} />
-            </div>
+            </div> */}
             <div className="input_field_short_purchase">
               <label
                 className="label_field_supershop_purchase"
@@ -1113,14 +1443,12 @@ const PurchaseOperation = () => {
               >
                 Vat
               </label>
-              <input
+              <select
                 type="number"
                 value={vat}
                 onChange={(e) => setVat(e.target.value)}
                 className="vat_input_purchase_operation"
-                list="vat_list"
-              />
-              <datalist id="vat_list">
+              >
                 {VatData.length > 0 &&
                   VatData.map((vat) => {
                     return (
@@ -1129,7 +1457,8 @@ const PurchaseOperation = () => {
                       </option>
                     );
                   })}
-              </datalist>
+              </select>
+
               <span>%</span>
               <button className="vat_add_button" onClick={showVatModal}>
                 +
@@ -1154,14 +1483,7 @@ const PurchaseOperation = () => {
               >
                 Paid*
               </label>
-              <input
-                type="number"
-                value={paid}
-                onChange={handlePaidChange}
-                style={{
-                  borderColor: error && paid === "" ? "red" : "",
-                }}
-              />
+              <input type="number" value={paid} onChange={handlePaidChange} />
             </div>
             <div className="input_field_short_purchase">
               <label
@@ -1170,7 +1492,112 @@ const PurchaseOperation = () => {
               >
                 Due
               </label>
-              <input type="number" value={due} style={newWidth} />
+              <input type="number" value={duePaid} style={newWidth} />
+            </div>
+          </div>
+          <div className="first_column_second_row">
+            <div className="first_column_second_row_input_field">
+              <div>
+                <div className="input_field_short_select">
+                  <label className="label_field_supershop_purchase">Shop</label>
+                  <select>
+                    {shopNameData &&
+                      shopNameData.map((shop) => (
+                        <option
+                          value={shop.shop_name_id}
+                          key={shop.shop_name_id}
+                        >
+                          {shop.shop_name}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+                <div className="input_field_short_select1">
+                  <label className="label_field_supershop_purchase">
+                    Employee
+                  </label>
+                  <select>
+                    <option>{Employee}</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <div className="input_field_short_date">
+                  <label className="label_field_supershop_purchase">
+                    Purchase Date
+                  </label>
+                  <input
+                    type="date"
+                    className="input_field_supershop_purchase_long"
+                    value={todayDate}
+                    onChange={(e) => setTodayDate(e.target.value)}
+                  />
+                </div>
+                <div className="input_field_short_select1">
+                  <label className="label_field_supershop_purchase">
+                    Payment Type
+                  </label>
+                  <select
+                    name=""
+                    id=""
+                    value={paymentType}
+                    onChange={(e) => setPaymentType(e.target.value)}
+                  >
+                    {paymentTypeData.map((data) => (
+                      <option key={data.payment_id} value={data.payment_type}>
+                        {data.payment_type}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div className="button_first_column_second_row">
+              <div className="save_button">
+                <div style={{ display: "none" }}>
+                  <ComponentToPrint
+                    ref={componentRef}
+                    supplier={supplierName}
+                    address={Supplieraddress}
+                    mobile={Suppliermobile}
+                    employee_name={Employee}
+                    date={todayDate}
+                    total={NettotalAmount}
+                    due={duePaid}
+                    paid={paid}
+                    invoice={invoice}
+                    rows={tableData}
+                    vat={vat}
+                  />
+                </div>
+                <button
+                  className=" button_supershop button1"
+                  onClick={handlePrint}
+                >
+                  <FcPrint className="print_icon" title="Print" />
+                </button>
+                Print
+              </div>
+
+              <div className="save_button">
+                <button
+                  className="button_supershop button2"
+                  onClick={handleSave}
+                >
+                  <img src={Save} alt="" />
+                </button>
+                Save
+              </div>
+            </div>
+          </div>
+
+          <div className="third_row_third_column_purchase_operation">
+            <div className="reset_button_purchses_report">
+              <button onClick={handleReset}>
+                <img src={reset} alt="" />
+              </button>
+              Reset
             </div>
           </div>
         </div>
@@ -1180,8 +1607,7 @@ const PurchaseOperation = () => {
             title="Add Supplier"
             open={visible}
             onCancel={handleCancel}
-            width={500}
-            height={800}
+            width={730}
             footer={null}
             style={{
               top: 46,
@@ -1202,10 +1628,23 @@ const PurchaseOperation = () => {
                             <input
                               type="text"
                               value={contributor_name}
-                              onChange={(e) =>
-                                setContributorName(e.target.value)
-                              }
+                              onChange={(e) => {
+                                setContributorName(e.target.value);
+                                setcontributorNameError("");
+                              }}
+                              style={{
+                                borderColor:
+                                  contributorNameError &&
+                                  contributor_name === ""
+                                    ? "red"
+                                    : "",
+                              }}
                             />
+                            <div className="error_message_supplier">
+                              {contributorNameError && contributor_name === ""
+                                ? contributorNameError
+                                : ""}
+                            </div>
                           </div>
                         </div>
                         <div className="search_permanent_supplier_supershop_column2">
@@ -1214,48 +1653,142 @@ const PurchaseOperation = () => {
                             <input
                               type="text"
                               value={mobile}
-                              onChange={(e) => setMobile(e.target.value)}
+                              onChange={(e) => {
+                                setMobile(e.target.value);
+                                setMobileError("");
+                              }}
+                              style={{
+                                borderColor:
+                                  mobileError && mobile === "" ? "red" : "",
+                              }}
                             />
+                            <div className="error_message_supplier">
+                              {mobileError && mobile === "" ? mobileError : ""}
+                            </div>
                           </div>
                           <div className="input_field_permanent_supplier_supershop">
                             <label>Address*</label>
                             <input
                               type="text"
                               value={address}
-                              onChange={(e) => setAddress(e.target.value)}
+                              onChange={(e) => {
+                                setAddress(e.target.value);
+                                setAddressError("");
+                              }}
+                              style={{
+                                borderColor:
+                                  addressError && address === "" ? "red" : "",
+                              }}
                             />
+                            <div className="error_message_supplier">
+                              {addressError && address === ""
+                                ? addressError
+                                : ""}
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
 
-                    <div>
+                    <div className="save-and-delete-button-supplier">
+                      {supplierId ? (
+                        <div className="save_button">
+                          <button
+                            className="button_supershop button2"
+                            onClick={handleupdateSupplier}
+                          >
+                            <img src={update} alt="" />
+                          </button>
+                          Update
+                        </div>
+                      ) : (
+                        <div className="save_button">
+                          <button
+                            className="button_supershop button2"
+                            onClick={handleSaveSupplier}
+                          >
+                            <img src={Save} alt="" />
+                          </button>
+                          Save
+                        </div>
+                      )}
                       <div className="save_button">
                         <button
                           className="button_supershop button2"
-                          onClick={handleSaveSupplier}
+                          onClick={handleDeleteSupplier}
                         >
-                          <img src={Save} alt="" />
+                          <img src={Delete} alt="" />
                         </button>
-                        Save
+                        Delete
+                      </div>
+                      <div className="save_button">
+                        <button
+                          className="button_supershop button2"
+                          onClick={HandleResetSupplier}
+                        >
+                          <img src={reset} alt="" />
+                        </button>
+                        Reset
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
+              <div className="searchbar_supplier">
+                <div className="input_field_brand_supershop">
+                  <label>Supplier Name</label>
+                  <input
+                    type="text"
+                    value={searchSupplierName}
+                    onChange={(e) => {
+                      setSearchSupplierName(e.target.value);
+                    }}
+                    list="supplier"
+                  />
+                  <datalist id="supplier">
+                    {supplierData.length > 0 &&
+                      supplierData.map((customer, index) => {
+                        return (
+                          <option key={index} value={customer.contributor_name}>
+                            {customer.contributor_name}
+                          </option>
+                        );
+                      })}
+                  </datalist>
+                </div>
+                <div className="searchbar_buttton">
+                  <button onClick={handleSupplierSearch}>Search</button>
+                </div>
+                <div
+                  className="searchbar_buttton"
+                  style={{ marginLeft: "4vw" }}
+                >
+                  <button onClick={fetchSupplierData}>Show All</button>
+                </div>
+              </div>
               <div className="second_row_modal">
-                <div className="table_div_modal">
+                <div className="table_div_modal" ref={tableRef}>
                   <table border={1} cellSpacing={1} cellPadding={2}>
                     <tr>
-                      <th style={Color}>Supplier Id</th>
+                      <th style={Color}>Serial No</th>
+
                       <th style={Color}>Name</th>
                       <th style={Color}>Mobile</th>
                       <th style={Color}>Address</th>
                     </tr>
                     {supplierData &&
                       supplierData.map((item, index) => (
-                        <tr>
+                        <tr
+                          style={{ cursor: "pointer" }}
+                          className={
+                            item.contributor_name_id === supplierId
+                              ? "activeRow"
+                              : ""
+                          }
+                          onClick={() => handleSupplierRow(item, index)}
+                        >
                           <td>{index + 1}</td>
+
                           <td>{item.contributor_name}</td>
                           <td>{item.mobile}</td>
                           <td>{item.address}</td>
@@ -1272,8 +1805,6 @@ const PurchaseOperation = () => {
           title="Add Brand"
           open={brandVisible}
           onCancel={handleBrandCancel}
-          width={500}
-          height={800}
           footer={null}
           style={{
             top: 46,
@@ -1281,6 +1812,7 @@ const PurchaseOperation = () => {
             left: 0,
             right: 0,
           }}
+          width={600}
         >
           <div className="container_permanent_supplier_supershop">
             <div className="first_row_div_permanent_supplier_supershop">
@@ -1294,14 +1826,25 @@ const PurchaseOperation = () => {
                           <input
                             type="text"
                             value={brand_name}
-                            onChange={(e) => setBrand_name(e.target.value)}
+                            onChange={(e) => {
+                              setBrand_name(e.target.value);
+                              setBrandError("");
+                            }}
+                            style={{
+                              borderColor:
+                                brandError && brand_name === "" ? "red" : "",
+                            }}
                           />
+
+                          <div className="error_message_brand_save">
+                            {brandError && brand_name === "" ? brandError : ""}
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  <div>
+                  <div className="save_and_delete_brand">
                     <div className="brand_save_button">
                       <button
                         className="button_supershop button2"
@@ -1311,8 +1854,43 @@ const PurchaseOperation = () => {
                       </button>
                       <span>Save</span>
                     </div>
+                    <div className="brand_save_button">
+                      <button
+                        className="button_supershop button2"
+                        onClick={handleDeleteBrand}
+                      >
+                        <img src={Delete} alt="" />
+                      </button>
+                      <span>Delete</span>
+                    </div>
                   </div>
                 </div>
+              </div>
+            </div>
+            <div className="second_row_modal">
+              <div
+                className="table_div_modal"
+                style={{ marginRight: "10px" }}
+                ref={tableRef}
+              >
+                <table border={1} cellSpacing={1} cellPadding={2}>
+                  <tr>
+                    <th style={Color}>Serial No</th>
+                    <th style={Color}>Brand Name</th>
+                  </tr>
+                  {brandData &&
+                    brandData.map((item, index) => (
+                      <tr
+                        key={index}
+                        style={{ cursor: "pointer" }}
+                        className={item.brand_id === brandId ? "activeRow" : ""}
+                        onClick={() => handleBrandRow(item, index)}
+                      >
+                        <td>{index + 1}</td>
+                        <td>{item.brand_name}</td>
+                      </tr>
+                    ))}
+                </table>
               </div>
             </div>
           </div>
@@ -1321,7 +1899,7 @@ const PurchaseOperation = () => {
           title="Add Unit"
           open={unitvisible}
           onCancel={handleUnitCancel}
-          width={500}
+          width={600}
           footer={null}
           style={{
             top: 46,
@@ -1342,8 +1920,19 @@ const PurchaseOperation = () => {
                           <input
                             type="text"
                             value={unit}
-                            onChange={(e) => setUnit(e.target.value)}
+                            onChange={(e) => {
+                              setUnit(e.target.value);
+                              setunitError("");
+                            }}
+                            style={{
+                              borderColor:
+                                unitError && unit === "" ? "red" : "",
+                            }}
                           />
+
+                          <div className="error_message_brand_save">
+                            {unitError && unit === "" ? unitError : ""}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -1360,7 +1949,42 @@ const PurchaseOperation = () => {
                       <span>Save</span>
                     </div>
                   </div>
+                  <div className="brand_save_button">
+                    <button
+                      className="button_supershop button2"
+                      onClick={handleDeleteUnit}
+                    >
+                      <img src={Delete} alt="" />
+                    </button>
+                    <span>Delete</span>
+                  </div>
                 </div>
+              </div>
+            </div>
+            <div className="second_row_modal">
+              <div
+                className="table_div_modal"
+                style={{ marginRight: "10px" }}
+                ref={tableRef}
+              >
+                <table border={1} cellSpacing={1} cellPadding={2}>
+                  <tr>
+                    <th style={Color}>Serial No</th>
+                    <th style={Color}>Unit Name</th>
+                  </tr>
+                  {unitData &&
+                    unitData.map((item, index) => (
+                      <tr
+                        key={index}
+                        style={{ cursor: "pointer" }}
+                        className={item.unit_id === unitID ? "activeRow" : ""}
+                        onClick={() => handleUnitRow(item, index)}
+                      >
+                        <td>{index + 1}</td>
+                        <td>{item.unit}</td>
+                      </tr>
+                    ))}
+                </table>
               </div>
             </div>
           </div>
@@ -1391,8 +2015,17 @@ const PurchaseOperation = () => {
                           <input
                             type="text"
                             value={rate}
-                            onChange={(e) => setRate(e.target.value)}
+                            onChange={(e) => {
+                              setRate(e.target.value);
+                              setVatError("");
+                            }}
+                            style={{
+                              borderColor: vatError && rate === "" ? "red" : "",
+                            }}
                           />
+                          <div className="error_message_brand_save">
+                            {vatError && rate === "" ? vatError : ""}
+                          </div>
                         </div>
                       </div>
                     </div>

@@ -1,35 +1,58 @@
+/* eslint-disable no-unused-vars */
+import React, { useState, useEffect } from "react";
+
 //===================making Top 10 Sale Products starts here====================
 export const topTenSaleProducts = (items) => {
   function getTop10Products(data) {
-    // Check if data is an array
     if (!Array.isArray(data)) {
       console.error("Data is not an array.");
       return [];
     }
 
-    // Count the quantity of each product
     const productCounts = {};
     data.forEach((item) => {
-      if (item.ProductTrace && item.ProductTrace.name) {
-        // Add null check for ProductTrace
+      if (
+        item.ProductTrace &&
+        item.ProductTrace.name &&
+        item.operation_type_id === 1 &&
+        item.Unit &&
+        item.Unit.unit
+      ) {
         const productName = item.ProductTrace.name;
-        if (productCounts[productName]) {
-          productCounts[productName] += parseInt(item.quantity_no);
+        let quantityToAdd = parseFloat(item.quantity_no); // Default quantity to add
+        let unitName = "";
+
+        // Check if the product name is "EAGGS"
+        if (
+          productName === "EAGGS" ||
+          productName === "EGGS" ||
+          productName === "eggs" ||
+          productName === "egg" ||
+          productName === "EGG"
+        ) {
+          quantityToAdd /= 12; // Divide quantity by 12 for "EAGGS" products
+          unitName = "Dozen"; // Set unit name to "Dozen"
         } else {
-          productCounts[productName] = parseInt(item.quantity_no);
+          // For products other than "EAGGS", use the unit name as is
+          unitName = item.Unit.unit;
+        }
+
+        // Update productCounts based on the calculated quantityToAdd
+        if (productCounts[productName]) {
+          productCounts[productName] += quantityToAdd;
+        } else {
+          productCounts[productName] = quantityToAdd;
         }
       }
     });
 
-    // Sort the products by quantity in descending order
     const sortedProducts = Object.entries(productCounts)
       .sort((a, b) => b[1] - a[1])
-      .slice(0, 10); // Get the top 10 products
+      .slice(0, 10);
 
-    // Convert the sorted products to the required format
     const top10Products = sortedProducts.map(([name, quantity]) => ({
       name,
-      Quantity: quantity,
+      Quantity: quantity.toFixed(2),
     }));
 
     return top10Products;
@@ -54,13 +77,9 @@ export const monthlySale = (items) => {
   function calculateTotalSalesByMonth(transactions) {
     const salesByMonth = {};
 
-    transactions.forEach((transaction) => {
-      if (
-        transaction.OperationType &&
-        transaction.OperationType.operation_type_id === 1
-      ) {
-        // Add null check for OperationType
-        const date = new Date(transaction.date);
+    transactions.forEach((item) => {
+      if (item.operation_type_id && item.operation_type_id === 1) {
+        const date = new Date(item.date);
         const month = date.toLocaleString("default", { month: "short" });
         const year = date.getFullYear();
         const key = `${month}-${year}`;
@@ -68,25 +87,40 @@ export const monthlySale = (items) => {
         if (!salesByMonth[key]) {
           salesByMonth[key] = 0;
         }
-        salesByMonth[key] += parseFloat(transaction.sale_price);
+
+        //vat handling:
+        if (item?.Tax?.rate) {
+          salesByMonth[key] += parseFloat(
+            item.sale_price * item.quantity_no -
+              (item.sale_price * item.quantity_no * item?.discount) / 100 +
+              ((item.sale_price * item.quantity_no -
+                (item.sale_price * item.quantity_no * item?.discount) / 100) *
+                item.Tax.rate) /
+                100
+          );
+        } else {
+          salesByMonth[key] += parseFloat(
+            item.sale_price * item.quantity_no -
+              (item.sale_price * item.quantity_no * item?.discount) / 100
+          );
+        }
       }
     });
-
+    console.log(items);
     const salesArray = Object.entries(salesByMonth).map(([key, value]) => ({
       month: key,
-      totalSale: value,
+      totalSale: value.toFixed(2),
     }));
 
     return salesArray;
   }
 
-  // Calculate total sale price of each month
   const totalSalesByMonth = calculateTotalSalesByMonth(items);
 
   // Check if totalSalesByMonth is an array
   if (!Array.isArray(totalSalesByMonth)) {
     console.error("Error: totalSalesByMonth is not an array.");
-    return null; // or handle the error in a way that makes sense for your application
+    return null;
   }
 
   totalSalesByMonth.forEach((item) => {
@@ -115,47 +149,68 @@ export const monthlySale = (items) => {
 
 //=================== monthlyTopTenSaleProducts===============
 export const monthlyTopTenSaleProducts = (items) => {
-  const piChartColors = ["#DD4F4F", "#F39C12", "#0088FE", "#9B59B6", "#008080"]; // Example colors for each item
+  console.log("home", items);
+  // Example colors for each item
+  const piChartColors = ["#DD4F4F", "#F39C12", "#0088FE", "#9B59B6", "#008080"];
 
-  function getLastMonthTop10Products(data) {
-    // Check if data is an array
+  function getCurrentMonthTop10Products(data) {
     if (!Array.isArray(data)) {
       console.error("Error: Data is not an array.");
       return [];
     }
+    console.log("data", data);
 
-    const lastMonth = new Date();
-    lastMonth.setMonth(lastMonth.getMonth() - 1);
-    const lastMonthStart = new Date(
-      lastMonth.getFullYear(),
-      lastMonth.getMonth(),
+    const currentMonth = new Date();
+    const currentMonthStart = new Date(
+      currentMonth.getFullYear(),
+      currentMonth.getMonth(),
       1
     );
-    const lastMonthEnd = new Date(
-      lastMonth.getFullYear(),
-      lastMonth.getMonth() + 1,
+    const currentMonthEnd = new Date(
+      currentMonth.getFullYear(),
+      currentMonth.getMonth() + 1,
       0
     );
 
-    const lastMonthItems = data.filter((item) => {
-      // Check if item.date is a valid date
+    const currentMonthItems = data.filter((item) => {
       if (!item.date || isNaN(new Date(item.date))) {
         console.error("Error: Invalid date found in data.");
         return false;
       }
 
       const itemDate = new Date(item.date);
-      return itemDate >= lastMonthStart && itemDate <= lastMonthEnd;
+      return itemDate >= currentMonthStart && itemDate <= currentMonthEnd;
     });
+    console.log("currentMonthItems", currentMonthItems);
 
     const productCounts = {};
-    lastMonthItems.forEach((item) => {
-      if (item.ProductTrace && item.ProductTrace.name) {
+    currentMonthItems.forEach((item) => {
+      if (
+        item.ProductTrace &&
+        item.ProductTrace.name &&
+        item.operation_type_id === 1 &&
+        item.Unit &&
+        item.Unit.unit
+      ) {
         const productName = item.ProductTrace.name;
-        if (productCounts[productName]) {
-          productCounts[productName] += parseInt(item.quantity_no);
+        let quantityToAdd = parseFloat(item.quantity_no);
+        let unitName = "";
+
+        // Check if the product name is "EAGGS"
+        if (
+          productName.toLowerCase().includes("eagg" || "eggs" || "egg") &&
+          item.unit_id === 1
+        ) {
+          quantityToAdd /= 12;
+          unitName = "Dozen";
         } else {
-          productCounts[productName] = parseInt(item.quantity_no);
+          unitName = item.Unit.unit;
+        }
+
+        if (productCounts[productName]) {
+          productCounts[productName] += quantityToAdd;
+        } else {
+          productCounts[productName] = quantityToAdd;
         }
       }
     });
@@ -163,32 +218,53 @@ export const monthlyTopTenSaleProducts = (items) => {
     const sortedProducts = Object.entries(productCounts)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 10);
+    console.log("sortedProducts", sortedProducts);
+    const top10Products = sortedProducts.map(([name, quantity]) => {
+      return {
+        name,
+        quantity: quantity.toFixed(2),
+        unitName:
+          currentMonthItems.find(
+            (item) =>
+              item.ProductTrace &&
+              item.ProductTrace.name === name &&
+              item.operation_type_id === 1 &&
+              item.Unit &&
+              item.Unit.unit
+          )?.unit_id === 1 &&
+          name.toLowerCase().includes("eagg" || "eggs" || "egg")
+            ? "Dozen"
+            : currentMonthItems.find(
+                (item) =>
+                  item.ProductTrace &&
+                  item.ProductTrace.name === name &&
+                  item.operation_type_id === 1 &&
+                  item.Unit &&
+                  item.Unit.unit
+              )?.Unit.unit || "",
+      };
+    });
 
-    const top10Products = sortedProducts.map(([name, quantity]) => ({
-      name,
-      value: quantity,
-    }));
-
+    console.log("top10Products", top10Products);
     return top10Products;
   }
 
   // Call the function with the provided data
-  const lastMonthTop10Products = getLastMonthTop10Products(items);
+  const currentMonthTop10Products = getCurrentMonthTop10Products(items);
 
-  const piChartData = lastMonthTop10Products.map((product, index) => ({
-    name: product.name,
-    value: product.value,
+  const piChartData = currentMonthTop10Products.map((product, index) => ({
+    name: product.name + " (" + product.unitName + ")",
+    value: parseFloat(product.quantity), // Ensure quantity is parsed as a float
     color: piChartColors[index % piChartColors.length],
   }));
   return piChartData;
 };
 
-
 //styles:
 export const allTimeTopTen_ProductStyle = {
   color: "#009CFF",
   colors: ["#7158e2", "#671686", "#9b59b6"],
-  title: "Top 10 Sale Products",
+  title: "Top Sale Products",
 };
 
 export const lastTweelveMonth_SaleStyle = {
@@ -201,10 +277,9 @@ export const lastTweelveMonth_SaleStyle = {
 
 //=============todays total sale========:
 export const todaysSaleFunction = (items) => {
-  // Check if items is an array
   if (!Array.isArray(items)) {
     console.error("Error: 'items' is not an array.");
-    return 0; // or handle the error in a way that makes sense for your application
+    return 0;
   }
 
   const today = new Date();
@@ -213,63 +288,96 @@ export const todaysSaleFunction = (items) => {
   let totalSale = 0;
 
   items.forEach((item) => {
-    // Check if item.date is a valid date
     if (!item.date || isNaN(new Date(item.date))) {
       console.error("Error: Invalid date found in items.");
-      return 0; // or handle the error in a way that makes sense for your application
+      return 0;
     }
 
     const transactionDate = new Date(item.date);
     transactionDate.setHours(0, 0, 0, 0);
 
-    if (transactionDate.getTime() === today.getTime()) {
-      totalSale += parseFloat(item.sale_price);
+    if (
+      transactionDate.getTime() === today.getTime() &&
+      item.operation_type_id === 1
+    ) {
+      //vat handling:
+      if (item?.Tax?.rate) {
+        totalSale += parseFloat(
+          item.sale_price * item.quantity_no -
+            (item.sale_price * item.quantity_no * item?.discount) / 100 +
+            ((item.sale_price * item.quantity_no -
+              (item.sale_price * item.quantity_no * item?.discount) / 100) *
+              item.Tax.rate) /
+              100
+        );
+      } else {
+        totalSale += parseFloat(
+          item.sale_price * item.quantity_no -
+            (item.sale_price * item.quantity_no * item?.discount) / 100
+        );
+      }
     }
   });
 
-  return totalSale;
+  return totalSale.toFixed(2);
 };
 
-
-//================todays income==========:
-export const todaysIncomefunction = (items) => {
-  // Check if items is an array
+//============================todays income=====================:
+export const todaysIncomefunction = (items, rows) => {
   if (!Array.isArray(items)) {
     console.error("Error: 'items' is not an array.");
-    return 0; // or handle the error in a way that makes sense for your application
+    return 0;
   }
 
-  // sold products total purchase amount
   const todayDate = new Date().toISOString()?.slice(0, 10);
-
-  // Filter items for today's date and operation_type_id equal to 1
+  //filter sell items
   const filteredItems = items.filter((item) => {
-    // Check if item is not null or undefined
     if (!item) {
       console.error("Error: Found null or undefined item in 'items'.");
       return false;
     }
-
-    // Get the date part from the item's date string
     const itemDate = item.date?.slice(0, 10);
-    
-    // Check if the item's date is today and operation_type_id is 1
     return itemDate === todayDate && item.operation_type_id === 1;
   });
 
-  // Calculate the total amount based on purchase_price
+  //filter purchasesell items
+  const filteredPurchaseItems = rows.filter((item) => {
+    if (!item) {
+      console.error("Error: Found null or undefined item in 'items'.");
+      return false;
+    }
+    return item.operation_type_id === 2;
+  });
+
   const totalPurchaseAmount = filteredItems.reduce((total, item) => {
-    // Check if item is not null or undefined
     if (!item) {
       console.error("Error: Found null or undefined item in 'filteredItems'.");
       return total;
     }
 
-    // Convert purchase_price and quantity_no to numbers and multiply them
-    const itemAmount =
-      parseFloat(item.purchase_price) * parseFloat(item.quantity_no);
-    // Add the calculated amount to the total
-    return total + itemAmount;
+    //tax for  this item in purchase time
+    const purchasedItem = filteredPurchaseItems.find(
+      (PurchaseItem) => PurchaseItem.product_trace_id === item.product_trace_id
+    );
+    const purchaseItemTax = purchasedItem?.Tax?.rate || 0;
+
+    if (purchaseItemTax > 0) {
+      const itemAmount = parseFloat(
+        item.purchase_price * item.quantity_no -
+          (item.purchase_price * item.quantity_no * item?.discount) / 100 +
+          ((item.purchase_price * item.quantity_no -
+            (item.purchase_price * item.quantity_no * item?.discount) / 100) *
+            item.Tax.rate) /
+            100
+      );
+      return total + itemAmount;
+    } else {
+      const itemAmount = parseFloat(
+        item.purchase_price * item.quantity_no -
+          (item.purchase_price * item.quantity_no * item?.discount) / 100
+      );
+      return total + itemAmount;
+    }
   }, 0);
 
   // todays total sell price
@@ -277,109 +385,155 @@ export const todaysIncomefunction = (items) => {
 
   // now todays net income
   const netIncome = todaysTotalSell - totalPurchaseAmount;
-  console.log(netIncome);
-  return netIncome;
+
+  return netIncome.toFixed(2);
 };
 
-//===============todays total quantity:===================
+//============================todays total sale quantity:===================
 export const todaysTotalQuantityFunction = (items) => {
-  // Check if items is an array
   if (!Array.isArray(items)) {
     console.error("Error: 'items' is not an array.");
-    return 0; // or handle the error in a way that makes sense for your application
+    return 0;
   }
 
-  // Get today's date in UTC format
   const today = new Date().toISOString()?.slice(0, 10);
 
-  // Filter items for today's date and operation_type_id = 1
   const todaysItems = items.filter((item) => {
     return item?.date?.slice(0, 10) === today && item?.operation_type_id === 1;
   });
 
-  // Calculate sum of quantity_no
   const sumOfQuantity = todaysItems.reduce((sum, item) => {
-    // Check if item is not null or undefined
     if (!item) {
       console.error("Error: Found null or undefined item in 'todaysItems'.");
       return sum;
     }
 
-    return sum + parseInt(item.quantity_no);
+    // Using optional chaining and nullish coalescing operator for null handling
+    const quantity = parseFloat(item.quantity_no) ?? 0;
+    return sum + quantity;
   }, 0);
 
-  return sumOfQuantity;
+  return sumOfQuantity.toFixed(2);
 };
 
-
-//==================total sale========:
+//=================================total sale=========================:
 export const totalSaleFunction = (items) => {
-  // Check if items is an array
   if (!Array.isArray(items)) {
     console.error("Error: 'items' is not an array.");
-    return 0; // or handle the error in a way that makes sense for your application
+    return 0;
   }
 
   let totalAmount = 0;
 
   items.forEach((item) => {
-    // Check if item is not null or undefined
     if (item && item.operation_type_id === 1) {
-      totalAmount += parseFloat(item.amount);
-    }
-  });
-
-  return totalAmount;
-};
-
-
-//============total cost=========:
-export const totalCostFunction = (items) => {
-  // Check if items is an array
-  if (!Array.isArray(items)) {
-    console.error("Error: 'items' is not an array.");
-    return 0; // or handle the error in a way that makes sense for your application
-  }
-
-  let totalAmountNot1 = 0;
-
-  items.forEach((item) => {
-    // Check if item is not null or undefined
-    if (item) {
-      if (item.operation_type_id !== 1) {
-        totalAmountNot1 += parseFloat(item.amount);
-      }
-    }
-  });
-
-  return totalAmountNot1;
-};
-
-
-//==============net income =========:
-export const netIncomeFunction = (items) => {
-  // Check if items is an array
-  if (!Array.isArray(items)) {
-    console.error("Error: 'items' is not an array.");
-    return 0; // or handle the error in a way that makes sense for your application
-  }
-
-  let totalAmount = 0;
-  let totalAmountNot1 = 0;
-
-  items.forEach((item) => {
-    // Check if item is not null or undefined
-    if (item) {
-      if (item.operation_type_id === 1) {
-        totalAmount += parseFloat(item.amount);
+      //vat handling:
+      if (item?.Tax?.rate) {
+        totalAmount += parseFloat(
+          item.sale_price * item.quantity_no -
+            (item.sale_price * item.quantity_no * item?.discount) / 100 +
+            ((item.sale_price * item.quantity_no -
+              (item.sale_price * item.quantity_no * item?.discount) / 100) *
+              item.Tax.rate) /
+              100
+        );
       } else {
-        totalAmountNot1 += parseFloat(item.amount);
+        totalAmount += parseFloat(
+          item.sale_price * item.quantity_no -
+            (item.sale_price * item.quantity_no * item?.discount) / 100
+        );
       }
     }
   });
 
-  const netIncome = totalAmount - totalAmountNot1;
-
-  return netIncome;
+  return totalAmount.toFixed(2);
 };
 
+//===========================total cost=======================:
+export const totalCostFunction = (items) => {
+  if (!Array.isArray(items)) {
+    console.error("Error: 'items' is not an array.");
+    return 0;
+  }
+
+  let totalAmountNot1 = 0;
+
+  items.forEach((item) => {
+    if (item?.operation_type_id === 2) {
+      //vat handling:
+      if (item?.Tax?.rate) {
+        totalAmountNot1 += parseFloat(
+          item.purchase_price * item.quantity_no -
+            (item.purchase_price * item.quantity_no * item?.discount) / 100 +
+            ((item.purchase_price * item.quantity_no -
+              (item.purchase_price * item.quantity_no * item?.discount) / 100) *
+              item.Tax.rate) /
+              100
+        );
+      } else {
+        totalAmountNot1 += parseFloat(
+          item.purchase_price * item.quantity_no -
+            (item.purchase_price * item.quantity_no * item?.discount) / 100
+        );
+      }
+    }
+  });
+
+  return totalAmountNot1.toFixed(2);
+};
+
+//=============================net income=========================:
+export const netIncomeFunction = (items, rows) => {
+  if (!Array.isArray(items)) {
+    console.error("Error: 'items' is not an array.");
+    return 0;
+  }
+
+  const totalCostAmount = totalCostFunction(rows);
+  const totalSaleAmount = totalSaleFunction(items);
+
+  const netIncome = totalSaleAmount - totalCostAmount;
+
+  return netIncome.toFixed(2);
+};
+
+//===========current date============:
+export function CurrentDate() {
+  const [currentDate, setCurrentDate] = useState(new Date());
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentDate(new Date());
+    }, 1000); // Update every second
+
+    return () => clearInterval(interval);
+  }, []); // Run only once when component mounts
+
+  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const months = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
+  const formattedDate = `${days[currentDate.getDay()]}, ${currentDate
+    .getDate()
+    .toString()
+    .padStart(2, "0")} ${
+    months[currentDate.getMonth()]
+  } ${currentDate.getFullYear()}`;
+
+  return (
+    <div>
+      <p className="date_text">{formattedDate}</p>
+    </div>
+  );
+}

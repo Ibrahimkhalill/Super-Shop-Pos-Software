@@ -62,6 +62,13 @@
   animation-name: effectTop;
   animation-duration: 1.3s;
 }
+
+.date_text {
+  font-size: 16px;
+  color: var(--textColor);
+  animation-name: effectTop;
+  animation-duration: 1.3s;
+}
 .dash_footer {
   background-color: var(--bgGreen);
   height: 4.2vh;

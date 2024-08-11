@@ -53,8 +53,7 @@
   height: 10vh;
   margin-left: 10vw;
   font-weight: bold;
-  gap: .5vw;
- 
+  gap: 0.5vw;
 }
 
 .add_to_cart_purchase_button button {
@@ -68,7 +67,7 @@
   border-radius: 4.4px;
   cursor: pointer;
 }
-.add_to_cart_purchase_button img{
+.add_to_cart_purchase_button img {
   width: 100%;
 }
 
@@ -112,7 +111,7 @@
   justify-content: space-between;
   column-gap: 2vh;
   width: 98vw;
-  height: 28.5vh;
+  height: 29.5vh;
   box-shadow: rgba(0, 0, 0, 0.19) 0px 10px 20px, rgba(0, 0, 0, 0.23) 0px 6px 6px;
   margin-left: 0.75vw;
   border-radius: 2vh;
@@ -166,7 +165,7 @@
   border-radius: 2vh;
   padding: 0.4vw;
   width: 97.5vw;
-  height: 27vh;
+  height: 29vh;
 }
 
 .input_field_supershop_purchase {
@@ -213,10 +212,9 @@
   flex-direction: row;
   margin-top: 0.4vw;
 }
-.input_field_short_date{
+.input_field_short_date {
   display: flex;
   flex-direction: row;
-  
 }
 
 .input_field_short_select select {
@@ -224,7 +222,7 @@
   border-radius: 4.4px;
   grid-column: input;
   align-self: left;
-  font-size: 0.8vw;
+  font-size: 0.9vw;
   background-color: #ffffff;
   width: 13vw;
   height: 3.7vh;
@@ -241,7 +239,7 @@
   border-radius: 4.4px;
   grid-column: input;
   align-self: left;
-  font-size: 0.8vw;
+  font-size: 0.9vw;
   background-color: #ffffff;
   width: 13vw;
   height: 3.7vh;
@@ -252,15 +250,15 @@
   animation-fill-mode: forwards;
   visibility: hidden;
 }
-.input_field_short_date input{
+.input_field_short_date input {
   box-shadow: 0 0px 0px 1px rgba(145, 141, 141, 0.5);
   border-radius: 4.4px;
   grid-column: input;
   align-self: left;
-  font-size: 0.8vw;
+  font-size: 0.9vw;
   background-color: #ffffff;
-  width: 12.8vw;
-  height: 3.4vh;
+  width: 13vw;
+  height: 3.7vh;
   border: 0.001px solid black;
   border-color: #b1afaf;
   animation: 3s;
@@ -271,7 +269,8 @@
 
 .button_supershop {
   background-color: #06341b;
-  box-shadow: rgba(0, 0, 0, 0.3) 0px 19px 38px, rgba(0, 0, 0, 0.22) 0px 15px 12px;
+  box-shadow: rgba(0, 0, 0, 0.3) 0px 19px 38px,
+    rgba(0, 0, 0, 0.22) 0px 15px 12px;
   border: none;
   color: black;
   text-align: center;
@@ -296,8 +295,6 @@
   height: 7vh;
 }
 
-
-
 .button2 {
   display: flex;
   align-items: center;
@@ -306,19 +303,18 @@
   width: 4vw;
   flex-direction: column;
 }
-.save_button{
+.save_button {
   display: flex;
   align-items: center;
   flex-direction: column;
-  gap: .5vw;
+  gap: 0.5vw;
   font-weight: bold;
-
 }
-.brand_save_button{
+.brand_save_button {
   display: flex;
   align-items: center;
   flex-direction: column;
-  gap: .2vw;
+  gap: 0.2vw;
   font-weight: bold;
   margin-top: 0.5vw;
 }
@@ -332,7 +328,8 @@
 }
 
 .button2:hover {
-  box-shadow: rgba(0, 0, 0, 0.3) 0px 19px 38px, rgba(0, 0, 0, 0.22) 0px 15px 12px;;
+  box-shadow: rgba(0, 0, 0, 0.3) 0px 19px 38px,
+    rgba(0, 0, 0, 0.22) 0px 15px 12px;
 }
 
 .print_icon {
@@ -343,15 +340,16 @@
   display: flex;
   flex-direction: row;
   column-gap: 10vw;
+  margin-top: 1.7vw;
 }
-.button_first_column_second_row button{
+.button_first_column_second_row button {
   background-color: #06341b;
 }
 
 .supplier_add_button {
   box-shadow: 0 12px 16px 0 rgba(0, 0, 0, 0.24),
     0 17px 50px 0 rgba(0, 0, 0, 0.19);
- background-color: #06341b;
+  background-color: #06341b;
   width: 2.4vw;
   height: 1.7vw;
   margin-left: 0.5vw;
@@ -364,7 +362,7 @@
 .vat_add_button {
   box-shadow: 0 12px 16px 0 rgba(0, 0, 0, 0.24),
     0 17px 50px 0 rgba(0, 0, 0, 0.19);
- background-color: #06341b;
+  background-color: #06341b;
   width: 2.4vw;
   height: 1.6vw;
   margin-left: 0.2vw;
@@ -377,7 +375,7 @@
 .brand_add_button {
   box-shadow: 0 12px 16px 0 rgba(0, 0, 0, 0.24),
     0 17px 50px 0 rgba(0, 0, 0, 0.19);
- background-color: #06341b;
+  background-color: #06341b;
   width: 2.4vw;
   height: 1.6vw;
   margin-left: 0.2vw;
@@ -390,9 +388,14 @@
   align-items: center;
   justify-content: center;
 }
-
+.save_and_delete_brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  column-gap: 30px;
+}
 .quantity_add_purchaes {
-  width: 3.8vw !important;
+  width: 4.2vw !important;
   height: 1.4vw !important;
 }
 
@@ -454,35 +457,47 @@
   border-radius: 2vh;
   column-gap: 1vw;
   width: 20vw;
-  height: 22.5vh;
+  height: 25.5vh;
   background-color: rgba(136, 179, 154, 1);
-  /* border: 1px solid white; */
   border: none;
   box-shadow: rgba(0, 0, 0, 0.3) 0px 19px 38px,
     rgba(0, 0, 0, 0.22) 0px 15px 12px;
   animation-name: effectRight;
   animation-duration: 1s;
 }
-.error_handle_input{
+.error_handle_input {
   display: flex;
   flex-direction: column;
- 
 }
-button{
+button {
   cursor: pointer !important;
 }
-.error_message{
-position: absolute;
-bottom: 0;
-font-size: .6vw;
-color: rgb(207, 46, 46);
+.error_message {
+  position: absolute;
+  bottom: 0;
+  font-size: 0.6vw;
+  color: rgb(207, 46, 46);
 }
-.error_message_supllier{
-position: absolute;
-top: 1.7vw;
-left: 6vw;
-font-size: .6vw;
-color: rgb(207, 46, 46);
+.error_message_supllier {
+  position: absolute;
+  top: 1.8vw;
+  left: 7vw;
+  font-size: 0.7vw;
+  color: rgb(207, 46, 46);
+}
+.error_message_paid {
+  position: absolute;
+  top: 1.5vw;
+  left: 8.1vw;
+  font-size: 0.6vw;
+  color: rgb(207, 46, 46);
+}
+.error_message_brand_save {
+  position: absolute;
+  top: 1.5vw;
+  left: 7vw;
+  font-size: 0.9vw;
+  color: rgb(207, 46, 46);
 }
 .bar_total_purchase input {
   box-shadow: none !important;
@@ -507,7 +522,7 @@ color: rgb(207, 46, 46);
   border-radius: 2vh;
   padding: 1vw;
   height: 8vh;
-  margin-top: 2vw;
+  margin-top: 3.5vw;
   row-gap: 0.5vw;
 }
 
@@ -560,7 +575,7 @@ color: rgb(207, 46, 46);
   animation-name: effectLeft;
   animation-duration: 1s;
 }
-.modal_supplier{
+.modal_supplier {
   width: 30vw;
   height: 10vw;
 }
@@ -584,7 +599,6 @@ color: rgb(207, 46, 46);
   font-size: 1vw;
   display: flex;
   align-items: center;
- 
 }
 
 .table_supershop_purchase {
@@ -602,8 +616,6 @@ color: rgb(207, 46, 46);
   animation-duration: 1s;
 }
 
-
-
 .total_div_supershop_purchase {
   display: flex;
   flex-direction: column;
@@ -614,7 +626,7 @@ color: rgb(207, 46, 46);
   margin-right: 0.5vw;
   margin-top: 0.5vw;
   column-gap: 1vw;
-  width: 23vw;
+  width: 24vw;
   height: 26vh;
   background-color: rgba(136, 179, 154, 1);
   box-shadow: rgba(0, 0, 0, 0.3) 0px 19px 38px,
@@ -622,7 +634,7 @@ color: rgb(207, 46, 46);
   border-radius: 2vh;
   /* border: 1px solid white; */
   transition: 0.5s;
-  animation-name: effectRight;
+  animation-name: effectButtom;
   animation-duration: 1s;
   position: relative;
 }
@@ -655,8 +667,6 @@ color: rgb(207, 46, 46);
   flex-direction: column;
   margin-top: 4.3vh;
 }
-
-
 
 .total_div_supershop_purchase label {
   width: 8vw !important;
@@ -706,7 +716,7 @@ color: rgb(207, 46, 46);
   border-radius: 4.4px;
   grid-column: input;
   align-self: left;
-  font-size: 0.8vw;
+  font-size: 0.9vw;
   background-color: #ffffff;
   width: 15vw;
   height: 5.2vh;
@@ -723,10 +733,34 @@ color: rgb(207, 46, 46);
   border-radius: 0.4px;
   grid-column: input;
   align-self: left;
-  font-size: 0.7vw;
+  font-size: 0.9vw;
   background-color: #ffffff;
   width: 14vw;
   height: 3.2vh;
+  border: 0.001px solid black;
+  border-color: #b1afaf;
+  animation: 3s;
+  animation-name: fadeIn;
+  animation-fill-mode: forwards;
+  visibility: hidden;
+}
+.input_field_long_supplier {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  padding-bottom: 0.5vw;
+  position: relative;
+}
+.input_field_long_supplier input {
+  box-shadow: 0 0px 0px 1px rgba(145, 141, 141, 0.5);
+  border-radius: 4.4px;
+  grid-column: input;
+  font-size: 0.9vw;
+  padding-left: 0.2vw;
+  background-color: #ffffff;
+  width: 14vw;
+  height: 3.5vh;
   border: 0.001px solid black;
   border-color: #b1afaf;
   animation: 3s;
@@ -782,6 +816,8 @@ color: rgb(207, 46, 46);
   align-items: center;
   justify-content: center;
   padding-bottom: 1vh;
+  position: relative;
+  margin-top: 0.3vw;
 }
 
 .input_field_short_long {
@@ -792,7 +828,7 @@ color: rgb(207, 46, 46);
   padding-bottom: 1.7vh;
   position: relative;
 }
-.input_field_short_long select{
+.input_field_short_long select {
   box-shadow: 0 0px 0px 1px rgba(145, 141, 141, 0.5);
   border-radius: 4.4px;
   grid-column: input;
@@ -808,14 +844,15 @@ color: rgb(207, 46, 46);
   animation-fill-mode: forwards;
   visibility: hidden;
 }
-.add_supplier_select_input{
+.add_supplier_select_input {
   box-shadow: 0 0px 0px 1px rgba(145, 141, 141, 0.5);
   border-radius: 4.4px;
   grid-column: input;
-  font-size: 0.8vw;
+  font-size: 0.9vw;
+  padding-left: 0.2vw;
   background-color: #ffffff;
-  width: 11.5vw;
-  height: 3.5vh;
+  width: 11vw !important;
+  height: 3.7vh;
   border: 0.001px solid black;
   border-color: #b1afaf;
   animation: 3s;
@@ -830,7 +867,6 @@ color: rgb(207, 46, 46);
   align-items: center;
   justify-content: center;
   padding-bottom: 1vh;
-
 }
 
 .input_field_short_total {
@@ -841,7 +877,19 @@ color: rgb(207, 46, 46);
   padding-bottom: 1vh;
   margin-left: 38vw;
 }
-
+.third_row_third_column_purchase_operation {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: rgba(0, 0, 0, 0.3) 0px 19px 38px,
+    rgba(0, 0, 0, 0.22) 0px 15px 12px;
+  background-color: rgba(136, 179, 154, 1);
+  width: 15vw;
+  margin: 0.4vw;
+  border-radius: 1vw;
+  animation-name: effectRight;
+  animation-duration: 1s;
+}
 .input_field_short_purchase input {
   box-shadow: 0 0px 0px 1px rgba(145, 141, 141, 0.5);
   border-radius: 4.4px;
@@ -859,27 +907,37 @@ color: rgb(207, 46, 46);
   visibility: hidden;
   text-shadow: 2px 7px 5px rgba(0, 0, 0, 0.3),
     0px -4px 10px rgba(255, 255, 255, 0.3);
+  padding-left: 0.3vw;
 }
 
-.input_field_supershop_purchase_long_brand{
+.input_field_supershop_purchase_long_brand {
   width: 7.9vw !important;
 }
 .input_field_purchase {
   display: flex;
   align-items: center;
   position: relative;
- 
 }
-.vat_input_purchase_operation{
+.vat_input_purchase_operation {
   width: 8.5vw !important;
+  height: 3.4vh;
+  border-radius: 4.4px;
+  border: none;
+  box-shadow: 0 0px 0px 1px rgba(145, 141, 141, 0.5);
+  border: 0.001px solid black;
+  border-color: #b1afaf;
+  animation: 3s;
+  animation-name: fadeIn;
+  animation-fill-mode: forwards;
+  visibility: hidden;
 }
-.input_field_short_purchase span{
+.input_field_short_purchase span {
   font-weight: bold;
 }
-.input_field_supershop_purchase_long_discount{
+.input_field_supershop_purchase_long_discount {
   width: 9.8vw !important;
 }
-.input_field_short_long span{
+.input_field_short_long span {
   font-weight: bold;
 }
 .input_field_purchase_first_column {
@@ -899,7 +957,7 @@ color: rgb(207, 46, 46);
   animation-name: effectLeft;
   animation-duration: 2s;
 }
-.purchases_input_last{
+.purchases_input_last {
   position: absolute;
   right: 7.8vw;
   top: 0vw;
@@ -913,7 +971,7 @@ color: rgb(207, 46, 46);
   font-size: 0.8vw;
   background-color: #ffffff;
   width: 10.5vw;
-  height: 2.8vh;
+  height: 3.4vh;
   border: 0.001px solid black;
   border-color: #b1afaf;
   animation: 3s;
@@ -922,6 +980,7 @@ color: rgb(207, 46, 46);
   visibility: hidden;
   text-shadow: 2px 7px 5px rgba(0, 0, 0, 0.3),
     0px -4px 10px rgba(255, 255, 255, 0.3);
+  padding-left: 0.3vw;
 }
 
 .input_field_short_long label {
@@ -952,6 +1011,15 @@ color: rgb(207, 46, 46);
   width: 5vw;
   height: 3.2vh;
   font-weight: bold;
+}
+
+.error_message_supplier {
+  position: absolute;
+  top: 0.3vw;
+  margin-top: 1.2vw;
+  margin-left: 1.2vw;
+  font-size: 0.6vw;
+  color: rgb(207, 46, 46);
 }
 
 @keyframes effectLeft {
@@ -1131,21 +1199,18 @@ color: rgb(207, 46, 46);
   margin-bottom: 8px;
   padding: 0;
   border-bottom: none;
-  margin-left: .3vw;
+  margin-left: 0.3vw;
 }
 
 .container_permanent_supplier_supershop {
-  
-  
-border-radius: 2vh;
-display: flex;
-flex-direction: column;
-row-gap: 1vw;
- 
+  border-radius: 2vh;
+  display: flex;
+  flex-direction: column;
+  row-gap: 1vw;
 }
 :where(.css-dev-only-do-not-override-1xg9z9n).ant-modal .ant-modal-content {
   box-shadow: rgba(0, 0, 0, 0.19) 0px 10px 20px, rgba(0, 0, 0, 0.23) 0px 6px 6px;
-  
+  width: auto;
   border-radius: 2vh;
   background-color: rgba(187, 210, 198, 1);
 }
@@ -1154,7 +1219,8 @@ row-gap: 1vw;
   flex-direction: row;
   align-items: center;
   justify-content: center;
-  padding-bottom: 0.6vw;
+  padding-bottom: 0.8vw;
+  position: relative;
 }
 
 .container_button_permanent_customer_supershop {
@@ -1179,8 +1245,118 @@ row-gap: 1vw;
   font-size: 0.9vw;
   padding-left: 0.3vw;
   background-color: #ffffff;
-  width: 9vw;
+  width: 12vw;
+  height: 3.5vh;
+  border: 0.001px solid red;
+  border-color: #b1afaf;
+  color: #000;
+  text-shadow: 2px 7px 5px rgba(0, 0, 0, 0.3),
+    0px -4px 10px rgba(255, 255, 255, 0.3);
+  animation: 3s;
+  animation-name: fadeIn;
+  animation-fill-mode: forwards;
+  visibility: hidden;
+}
+.save-and-delete-button-supplier {
+  display: flex;
+  column-gap: 30px;
+}
+.activeRow {
+  background-color: #1b7542;
+  color: #fff;
+}
+.input_field_permanent_supplier_supershop label {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  /* box-shadow: 0 2px 100px 0 rgba(32, 31, 31, 0.5);
+  border-radius: 3px; */
+  color: #000;
+  font-size: 0.8vw;
+  padding-left: 0.3vw;
+  width: 7vw;
   height: 3.2vh;
+  font-weight: bold;
+  box-shadow: 0 2px 100px 0 rgba(32, 31, 31, 0.5);
+  border-radius: 3px;
+}
+
+.first_row_div_permanent_supplier_supershop {
+  box-shadow: rgba(0, 0, 0, 0.3) 0px 19px 38px,
+    rgba(0, 0, 0, 0.22) 0px 15px 12px;
+  background-color: rgba(136, 179, 154, 1);
+  border-radius: 2vh;
+  transition: 0.5s;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  column-gap: 6vw;
+}
+.second_row_modal {
+  box-shadow: rgba(0, 0, 0, 0.3) 0px 19px 38px,
+    rgba(0, 0, 0, 0.22) 0px 15px 12px;
+  background-color: rgba(136, 179, 154, 1);
+  border-radius: 2vh;
+  height: 15vw;
+  transition: 0.5s;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  position: relative;
+}
+.searchbar_supplier {
+  box-shadow: rgba(0, 0, 0, 0.3) 0px 19px 38px,
+    rgba(0, 0, 0, 0.22) 0px 15px 12px;
+  background-color: rgba(136, 179, 154, 1);
+  border-radius: 2vh;
+  padding: 10px 20px;
+  transition: 0.5s;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  column-gap: 10px;
+}
+.searchbar_buttton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.searchbar_buttton button {
+  background-color: rgba(6, 52, 27, 1) !important;
+  color: white;
+  box-shadow: 0 12px 16px 0 rgba(0, 0, 0, 0.24),
+    0 17px 50px 0 rgba(0, 0, 0, 0.19);
+  border-radius: 4.4px;
+  padding: 4px 20px;
+  border: none;
+}
+.input_field_brand_supershop {
+  display: flex;
+}
+.input_field_brand_supershop label {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  color: #000;
+  font-size: 0.8vw;
+  padding-left: 0.3vw;
+  width: 7vw;
+  height: 3.2vh;
+  font-weight: bold;
+  box-shadow: 0 2px 100px 0 rgba(32, 31, 31, 0.5);
+  border-radius: 3px;
+}
+.input_field_brand_supershop input {
+  box-shadow: 0 0px 0px 1px rgba(145, 141, 141, 0.5);
+  border-radius: 3px;
+  font-size: 0.9vw;
+  padding-left: 0.3vw;
+  background-color: #ffffff;
+  width: 12vw;
+  height: 3.5vh;
   border: 0.001px solid red;
   border-color: #b1afaf;
   color: #000;
@@ -1192,65 +1368,17 @@ row-gap: 1vw;
   visibility: hidden;
 }
 
-.input_field_permanent_supplier_supershop label {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: flex-start;
-  /* box-shadow: 0 2px 100px 0 rgba(32, 31, 31, 0.5);
-  border-radius: 3px; */
-  color: #000;
-  
-  font-size: 0.8vw;
-  padding-left: 0.3vw;
-  width: 7vw;
-
-  height: 3.2vh;
-  font-weight: bold;
-  
-  box-shadow: 0 2px 100px 0 rgba(32, 31, 31, 0.5);
-  border-radius: 3px;
-  
-
-  
-}
-
-
-.first_row_div_permanent_supplier_supershop {
-  box-shadow: rgba(0, 0, 0, 0.3) 0px 19px 38px,
-  rgba(0, 0, 0, 0.22) 0px 15px 12px;
-  background-color: rgba(136, 179, 154, 1);
-  border-radius: 2vh;
-  transition: 0.5s;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  column-gap: 6vw;
-}
-.second_row_modal{
-  box-shadow: rgba(0, 0, 0, 0.3) 0px 19px 38px,
-  rgba(0, 0, 0, 0.22) 0px 15px 12px;
-  background-color: rgba(136, 179, 154, 1);
-  border-radius: 2vh;
-  height: 15vw;
-  transition: 0.5s;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  position: relative;
-  
-
-  
-}
-.table_div_modal{
-  width: 26.6vw;
+.table_div_modal {
+ 
   overflow-y: scroll;
   height: 100%;
   margin-left: 1vw;
+  margin-right: .5vw;
   height: 14vw;
-  
 }
-
+.table_div_modal table td {
+  font-size: 0.9vw;
+}
 .container_search_permanent_supplier_supershop {
   /* box-shadow: 0 4px 30px 0 rgba(167, 169, 170, 0.821); */
   border-radius: 2vh;
@@ -1267,7 +1395,7 @@ row-gap: 1vw;
   flex-direction: row;
   align-items: center;
   justify-content: center;
-  column-gap: 3vw;
+  column-gap: 2vw;
 }
 
 .search_permanent_customer_supershop {
@@ -1293,7 +1421,6 @@ row-gap: 1vw;
 
 /* second row div */
 
-
 .table_wrapper_permanent_customer_supershop {
   max-height: 500px;
   overflow-y: scroll;
@@ -1303,7 +1430,6 @@ row-gap: 1vw;
   height: 14vw;
   padding-top: 0vh;
 }
-
 
 .third_row_div_permanent_customer_supershop {
   box-shadow: 0 4px 30px 0 rgba(167, 169, 170, 0.821);
@@ -1317,10 +1443,9 @@ row-gap: 1vw;
   padding-right: 1vw;
 }
 .table_div_modal {
-  scrollbar-color: rgba(136, 179, 154, 1) rgba(187, 210, 198, 1); 
+  scrollbar-color: rgba(136, 179, 154, 1) rgba(187, 210, 198, 1);
 }
 
-
 .table_div_modal::-webkit-scrollbar-track {
-  background: rgb(193, 219, 206); ;
+  background: rgb(193, 219, 206);
 }

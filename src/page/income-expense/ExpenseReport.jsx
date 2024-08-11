@@ -1,11 +1,11 @@
-
-    import React from "react";
+import React from "react";
 import "./expance-reoprt.css";
 import { useState, useEffect } from "react";
 import InvestorExportExcel from "../../components/ExportExcel";
 import "react-toastify/dist/ReactToastify.css";
-import { RxUpdate } from "react-icons/rx";
+import { BiReset } from "react-icons/bi";
 import { MdPreview } from "react-icons/md";
+import { MdDelete } from "react-icons/md";
 import { IoIosSave } from "react-icons/io";
 import { RotatingLines } from "react-loader-spinner";
 import { ToastContainer, toast } from "react-toastify";
@@ -24,28 +24,28 @@ const ExpanceReport = () => {
   const [paid, setPaid] = useState([]);
   const [due, setDue] = useState([]);
   const [duePaid, setDuePaid] = useState("");
-  const axiosInstance = axios.create({baseURL: process.env.REACT_APP_BASE_URL,})
+  const [selectedID, setSelectedID] = useState(null);
+  const toastId = React.useRef(null);
+  const axiosInstance = axios.create({
+    baseURL: process.env.REACT_APP_BASE_URL,
+  });
 
   useEffect(() => {
+    document.title = "Expense Report";
     setIsLoading(true);
     const fetchData = async () => {
       try {
         const response_getAllTranscatioData = await axiosInstance.get(
-          "/api/transactionsRouter/getAllTransactions"
+          "/transactionsRouter/getAllTransactionByFiltered?operation_type_id=3"
         );
 
         const datas_getAllTranscatioData = response_getAllTranscatioData.data;
-        const filteredData = datas_getAllTranscatioData.filter(
-          (item) =>
-            item.operation_type_id &&
-            item.operation_type_id === 3
-        );
-        setTimeout(() => {
-          setRows(filteredData);
-          setFixData([...new Set(filteredData)]);
-          console.log(filteredData);
-          setIsLoading(false);
-        }, 1000);
+
+        setRows(datas_getAllTranscatioData);
+        setFixData([...new Set(datas_getAllTranscatioData)]);
+        console.log(datas_getAllTranscatioData);
+        setSelectedID(null);
+        setIsLoading(false);
       } catch (error) {
         console.log(error.message);
       }
@@ -53,7 +53,7 @@ const ExpanceReport = () => {
 
     // Call the function
     fetchData();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleClickShowAll = () => {
@@ -61,21 +61,17 @@ const ExpanceReport = () => {
     const fetchData = async () => {
       try {
         const response_getAllTranscatioData = await axiosInstance.get(
-          "/api/transactionsRouter/getAllTransactions"
+          "/transactionsRouter/getAllTransactionByFiltered?operation_type_id=3"
         );
 
         const datas_getAllTranscatioData = response_getAllTranscatioData.data;
-        const filteredData = datas_getAllTranscatioData.filter(
-          (item) =>
-            item.operation_type_id &&
-            item.operation_type_id === 3
-        );
-        setTimeout(() => {
-          setRows(filteredData);
-          setFixData([...new Set(filteredData)]);
-          console.log(filteredData);
-          setIsLoading(false);
-        }, 1000);
+
+        setRows(datas_getAllTranscatioData);
+        setFixData([...new Set(datas_getAllTranscatioData)]);
+        setSelectedID(null);
+        console.log(datas_getAllTranscatioData);
+
+        setIsLoading(false);
       } catch (error) {
         console.log(error.message);
       }
@@ -83,33 +79,59 @@ const ExpanceReport = () => {
 
     // Call the function
     fetchData();
+    setSelectedID(null);
+    setDate("");
+    setToDate("");
+    setFromDate("");
   };
+
+  // ======================= Date search ======================
 
   const handleFilterDate = () => {
-    const filterData = fixData.filter((item) => {
-      if (item.date) {
-        const itemDate = item.date.split("T")[0].toLowerCase();
-        return (
-          itemDate.includes(fromDate.split("T")[0].toLowerCase()) &&
-          itemDate.includes(toDate.split("T")[0].toLowerCase())
-        );
+    const dateToAndFromDate = async () => {
+      if (
+        !fromDate ||
+        !toDate ||
+        typeof fromDate !== "string" ||
+        typeof toDate !== "string"
+      ) {
+        if (!toast.isActive(toastId.current)) {
+          toastId.current = toast.warning("Both Date Fields Are Required");
+        }
+        return;
       }
-      return false;
-    });
+      const response = await axiosInstance.get(
+        `/transactionsRouter/getTransactionProductFromDateToDate?startDate=${fromDate}&endDate=${toDate}&operation_type_id=3`
+      );
+      if (response.status === 200) {
+        const responseData = response.data;
+        setRows(responseData);
+      }
+    };
 
-    setRows(filterData);
+    dateToAndFromDate();
   };
 
-  const handleFilterOnlyDate = () => {
-    const filterData = fixData.filter((item) => {
-      if (item.date) {
-        const itemDate = item.date.split("T")[0].toLowerCase();
-        return itemDate.includes(date.split("T")[0].toLowerCase());
-      }
-      return false;
-    });
+  // ============== Only Date ============================
 
-    setRows(filterData);
+  const handleFilterOnlyDate = async () => {
+    try {
+      if (!date || typeof date !== "string") {
+        if (!toast.isActive(toastId.current)) {
+          toastId.current = toast.warning("Date Is Required");
+        }
+        return;
+      }
+      const response = await axiosInstance.get(
+        `/transactionsRouter/getTransactionProductOnlyDate?date=${date}&operation_type_id=3`
+      );
+      if (response.status === 200) {
+        const responseData = response.data;
+        setRows(responseData);
+      }
+    } catch (error) {
+      console.log("Date api Error", error);
+    }
   };
 
   const totalPaid =
@@ -146,19 +168,102 @@ const ExpanceReport = () => {
 
   const TotalDue = totalAmount - totalPaid;
 
+  // Data in input field
   const hendleDataInputField = (item) => {
+    setSelectedID(item.transaction_id);
     setExpanceName(item.comment);
     setTotalCost(item.amount);
     setPaid(item.paid);
     setDate(item.date ? item.date.split("T")[0] : "");
     setDue(parseFloat(item.amount) - parseFloat(item.paid));
-    setDuePaid(parseFloat(item.amount) - parseFloat(item.paid));
+    // setDuePaid(parseFloat(item.amount) - parseFloat(item.paid));
   };
 
+  // Updated due payment
+  console.log(due, parseInt(duePaid));
+  // http://194.233.87.22:5004/api/transactionsRouter/updateTransactionPaidFromAnyPageByID?transaction_id=&paid=
 
-  const updatedData = ()=>{
-    toast.success("This is For Updated Version");
-  }
+  const updatedDueExpanceData = async (event) => {
+    if (event.detail > 1) {
+      return;
+    }
+
+    if (!selectedID) {
+      toast.warning("Please Selected a Row");
+      return;
+    }
+
+    const duePayment = parseFloat(paid) + parseFloat(duePaid);
+
+    if (due < parseInt(duePaid)) {
+      toast.error("Due payment cannot exceed the due amount");
+      return;
+    }
+    if (duePaid === 0) {
+      toast.error("Due payment cannot exceed the due amount");
+      return;
+    }
+
+    if (duePaid < 0) {
+      toast.error("Due payment cannot exceed the due amount");
+      return;
+    }
+    if (duePaid === "") {
+      toast.error("Due Paid Can't empty");
+      return;
+    }
+
+    try {
+      const response = await axiosInstance.put(
+        `/transactionsRouter/updateTransactionPaidFromAnyPageByID?transaction_id=${selectedID}&paid=${duePayment}`
+      );
+      console.log(response);
+      if (response.status === 200) {
+        toast.success("Successfully Due Paid.");
+        setSelectedID(null);
+        ResetData();
+        handleClickShowAll();
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const ResetData = () => {
+    setSelectedID(null);
+    setExpanceName("");
+    setTotalCost("");
+    setPaid("");
+    setDate("");
+    setDue("");
+    setDuePaid("");
+  };
+
+  const deleteTransection = async (event) => {
+    if (event.detail > 1) {
+      return;
+    }
+    try {
+      if (!selectedID) {
+        //toast message:
+        toast.error("Please Selected A Row !");
+      } else {
+        const response = await axiosInstance.delete(
+          `/transactionsRouter/deleteTransactionByID?transaction_id=${selectedID}`
+        );
+
+        if (response.status === 200) {
+          handleClickShowAll();
+          ResetData();
+          toast.success("Successfully deleted data");
+        } else {
+          console.log(`Error while deleting data`);
+        }
+      }
+    } catch (error) {
+      console.log(error.message);
+    }
+  };
 
   return (
     <div className="full_div_supershop_expense_report">
@@ -171,6 +276,7 @@ const ExpanceReport = () => {
                 <input
                   type="date"
                   onChange={(event) => setDate(event.target.value)}
+                  value={date}
                 />
 
                 <button type="submit" onClick={handleFilterOnlyDate}>
@@ -187,6 +293,7 @@ const ExpanceReport = () => {
               <input
                 type="date"
                 onChange={(event) => setFromDate(event.target.value)}
+                value={fromDate}
               />
             </div>
           </div>
@@ -197,6 +304,7 @@ const ExpanceReport = () => {
             <input
               type="date"
               onChange={(event) => setToDate(event.target.value)}
+              value={toDate}
             />
             <button type="submit" onClick={handleFilterDate}>
               Search
@@ -218,7 +326,6 @@ const ExpanceReport = () => {
         </div>
       </div>
       <div className="second_row_div_supershop_expense_report">
-        <div className="table_wrapper_supershop_expense_report">
         {isLoading ? (
           <RotatingLines
             strokeColor="grey"
@@ -228,40 +335,41 @@ const ExpanceReport = () => {
             visible={true}
           />
         ) : (
-          <table border={3} cellSpacing={2} cellPadding={10}>
-            <tr>
-              <th>Serial</th>
-              <th>Expence Name</th>
-              <th>Cost</th>
-              <th>Paid</th>
-              <th>Due</th>
-              <th>Date</th>
-            </tr>
-            <tbody>
-              {rows.length > 0 && rows.map((item, index) => (
-                <tr
-                  key={index.transaction_id}
-                  onClick={() => hendleDataInputField(item)}
-                  className="bg-color"
-                  tabindex="0"
-                >
-                  <td className="hover-effect">{index + 1}</td>
-                  <td className="hover-effect">{item.comment}</td>
-                  <td className="hover-effect">{item.amount}</td>
-
-                  <td className="hover-effect">{item.paid}</td>
-                  <td className="hover-effect">
-                    {parseFloat(item.amount) - parseFloat(item.paid)}
-                  </td>
-                  <td className="hover-effect">
-                    {item.date ? item.date.split("T")[0] : ""}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className="table_wrapper_supershop_expense_report">
+            <table>
+              <tr>
+                <th>Serial</th>
+                <th>Expense Name</th>
+                <th>Cost</th>
+                <th>Paid</th>
+                <th>Due</th>
+                <th>Date</th>
+              </tr>
+              <tbody>
+                {rows.length > 0 &&
+                  rows.map((item, index) => (
+                    <tr
+                      key={index.transaction_id}
+                      onClick={() => hendleDataInputField(item)}
+                      className={
+                        selectedID === item.transaction_id
+                          ? "rows selected"
+                          : "rows"
+                      }
+                      tabindex="0"
+                    >
+                      <td>{index + 1}</td>
+                      <td>{item.comment}</td>
+                      <td>{item.amount}</td>
+                      <td>{item.paid}</td>
+                      <td>{parseFloat(item.amount) - parseFloat(item.paid)}</td>
+                      <td>{item.date ? item.date.split("T")[0] : ""}</td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
         )}
-        </div>
       </div>
       <div className="third_row_div_supershop_expense_report">
         <div className="container_view_update_supershop_expense_report">
@@ -269,7 +377,11 @@ const ExpanceReport = () => {
             <div className="input-field_supershop_expense_report">
               <label>Total Price</label>
               <input
-                style={{ fontSize: "1vw", textAlign: "center" }}
+                style={{
+                  fontWeight: "bold",
+                  fontSize: "1vw",
+                  textAlign: "center",
+                }}
                 disabled
                 value={totalAmount}
               />
@@ -277,7 +389,11 @@ const ExpanceReport = () => {
             <div className="input-field_supershop_expense_report">
               <label>Paid</label>
               <input
-                style={{ fontSize: "1vw", textAlign: "center" }}
+                style={{
+                  fontWeight: "bold",
+                  fontSize: "1vw",
+                  textAlign: "center",
+                }}
                 disabled
                 value={totalPaid}
               />
@@ -285,7 +401,11 @@ const ExpanceReport = () => {
             <div className="input-field_supershop_expense_report">
               <label>Due</label>
               <input
-                style={{ fontSize: "1vw", textAlign: "center" }}
+                style={{
+                  fontWeight: "bold",
+                  fontSize: "1vw",
+                  textAlign: "center",
+                }}
                 disabled
                 value={TotalDue}
               />
@@ -299,6 +419,7 @@ const ExpanceReport = () => {
                 <input
                   value={expanceName}
                   onChange={(event) => setExpanceName(event.target.value)}
+                  disabled
                 />
               </div>
               <div className="input-field_supershop_expense_report">
@@ -307,6 +428,7 @@ const ExpanceReport = () => {
                   type="date"
                   value={date}
                   onChange={(event) => setDate(event.target.value)}
+                  disabled
                 />
               </div>
             </div>
@@ -316,6 +438,7 @@ const ExpanceReport = () => {
                 <input
                   value={totalCost}
                   onChange={(event) => setTotalCost(event.target.value)}
+                  disabled
                 />
               </div>
               <div className="input-field_supershop_expense_report">
@@ -323,6 +446,7 @@ const ExpanceReport = () => {
                 <input
                   value={paid}
                   onChange={(event) => setPaid(event.target.value)}
+                  disabled
                 />
               </div>
             </div>
@@ -332,21 +456,28 @@ const ExpanceReport = () => {
                 <input
                   value={due}
                   onChange={(event) => setDue(event.target.value)}
+                  disabled
                 />
               </div>
             </div>
             <div className="container-update-column4_supershop_expense_report">
               <div className="container_button_supershop_expense_report">
-                <button onClick={updatedData}>
-                  <RxUpdate />
+                <button onClick={ResetData}>
+                  <BiReset />
                 </button>
-                <span>Update</span>
+                <span>Reset</span>
+              </div>
+              <div className="container_button_supershop_expense_report">
+                <button onClick={deleteTransection}>
+                  <MdDelete className="red" />
+                </button>
+                <span>Delete</span>
               </div>
             </div>
           </div>
         </div>
         <div className="container-update-column5_supershop_expense_report">
-          <h4 style={{ fontSize: "1.2vw" }}>Due Paid</h4>
+          <h4 style={{ fontSize: "1.2vw" }}>Due Payment</h4>
           <div>
             <div
               style={{ marginTop: "3vw" }}
@@ -360,7 +491,7 @@ const ExpanceReport = () => {
               />
             </div>
             <div className="container_button_supershop_expense_report">
-              <button onClick={updatedData}>
+              <button onClick={updatedDueExpanceData}>
                 <IoIosSave />
               </button>
               <span>Save</span>
@@ -368,7 +499,7 @@ const ExpanceReport = () => {
           </div>
         </div>
       </div>
-      <ToastContainer position="top-center" />
+      <ToastContainer stacked autoClose={2000} position="top-right" />
     </div>
   );
 };

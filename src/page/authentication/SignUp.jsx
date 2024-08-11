@@ -8,29 +8,21 @@ import { RotatingLines } from "react-loader-spinner";
 import { FaEyeSlash } from "react-icons/fa";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import axios from "axios";
-
 const SuperShopRegister = () => {
   const [passShow, setPassShow] = useState(false);
   const [userName, setUserName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [OTP, setOTP] = useState("");
-  const [selectedRoles, setSelectedRoles] = useState("user");
+  const [selectedRoles, setSelectedRoles] = useState("seller");
   const [isDisabledOTPButton, setIsDisabledOTPButton] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-  const axiosInstance = axios.create({baseURL: process.env.REACT_APP_BASE_URL,})
-
+  const toastId = React.useRef(null);
 
   const handleOptionChange = (event) => {
     setSelectedRoles(event.target.value);
   };
-
-  // // Sign In Action
-  // const HandleSignIn = (event) => {
-  //   event.preventDefault();
-  // };
 
   // Handle Click From Submition
   const handleFromSubmit = async (event) => {
@@ -67,9 +59,11 @@ const SuperShopRegister = () => {
     // If there are validation errors, display toast messages
     if (Object.keys(newErrors).length > 0) {
       Object.values(newErrors).forEach((error) => {
-        toast.error(error, {
-          position: "bottom-center",
-        });
+        if (!toast.isActive(toastId.current)) {
+          toastId.current = toast.error(error, {
+            position: "bottom-center",
+          });
+        }
       });
       return;
     }
@@ -78,26 +72,34 @@ const SuperShopRegister = () => {
     setIsDisabledOTPButton(false);
 
     try {
-      await axiosInstance.post("/api/auth/signup", {
-        method: "POST",
-        headers: {
-          "Content-type": "application/json",
-        },
-        body: JSON.stringify({
-          username: userName,
-          OTPemail: "au055018@gmail.com",
-          USERemail: email,
-          OTP: OTP,
-          password: password,
-          roles: [selectedRoles],
-        }),
-      }).then(async function (response) {
+      await fetch(
+        "http://194.233.87.22:" +
+          process.env.REACT_APP_BACKEND_PORT +
+          "/api/auth/signup",
+        {
+          method: "POST",
+          headers: {
+            "Content-type": "application/json",
+          },
+          body: JSON.stringify({
+            username: userName,
+            OTPemail: "merinasoft.official@gmail.com",
+            USERemail: email,
+            OTP: OTP,
+            password: password,
+            roles: [selectedRoles],
+          }),
+        }
+      ).then(async function (response) {
         const text = await response.text();
         sleep(1000).then(() => {
           setIsLoading(false);
         });
+        if (!toast.isActive(toastId.current)) {
+          toastId.current = toast(text);
+        }
 
-        toast(text);
+        // toast(text);
         console.log(text); //here you can access it
       });
 
@@ -113,14 +115,20 @@ const SuperShopRegister = () => {
 
     // Input validation
     if (!email) {
-      toast.error("Email is required", {
-        position: "bottom-center",
-      });
+      if (!toast.isActive(toastId.current)) {
+        toastId.current = toast.error("Email is required", {
+          position: "bottom-center",
+        });
+      }
+
       return;
     } else if (!/^\S+@\S+\.\S+$/.test(email)) {
-      toast.error("Invalid email format", {
-        position: "bottom-center",
-      });
+      if (!toast.isActive(toastId.current)) {
+        toastId.current = toast.error("Invalid email format", {
+          position: "bottom-center",
+        });
+      }
+
       return;
     }
     // input validation end
@@ -128,18 +136,26 @@ const SuperShopRegister = () => {
     setIsDisabledOTPButton(true);
 
     try {
-      await axiosInstance.post("/api/auth/otp", {
-        method: "POST",
-        headers: {
-          "Content-type": "application/json",
-        },
-        body: JSON.stringify({ email: email }),
-      }).then(async function (response) {
+      await fetch(
+        "http://194.233.87.22:" +
+          process.env.REACT_APP_BACKEND_PORT +
+          "/api/auth/otp",
+        {
+          method: "POST",
+          headers: {
+            "Content-type": "application/json",
+          },
+          body: JSON.stringify({ email: email }),
+        }
+      ).then(async function (response) {
         const text = await response.text();
         sleep(1000).then(() => {
           setIsLoading(false);
         });
-        toast(text);
+        if (!toast.isActive(toastId.current)) {
+          toastId.current = toast(text);
+        }
+        // toast(text);
         console.log(text); //here you can access it
       });
 
@@ -149,8 +165,7 @@ const SuperShopRegister = () => {
     }
   };
 
-  
-console.log(OTP)
+  console.log(OTP);
   return (
     <div className="full_div_register_page">
       <img className="img-full-view" src={supershopimg} alt="" />
@@ -175,24 +190,24 @@ console.log(OTP)
             <div className="input_field_roles">
               <input
                 type="radio"
-                id="employee"
+                id="user"
                 name="userType"
-                value="employee"
-                checked={selectedRoles === "user"}
+                value="seller"
+                checked={selectedRoles === "seller"}
                 onChange={handleOptionChange}
               />
-              <label htmlFor="employee">User</label>
+              <label htmlFor="user">Seller</label>
             </div>
             <div className="input_field_roles">
               <input
                 type="radio"
-                id="account"
+                id="moderator"
                 name="userType"
-                value="account"
+                value="moderator"
                 checked={selectedRoles === "moderator"}
                 onChange={handleOptionChange}
               />
-              <label htmlFor="account">Moderator</label>
+              <label htmlFor="moderator">Moderator</label>
             </div>
           </div>
           {/* User Rules Start */}
@@ -270,14 +285,14 @@ console.log(OTP)
             </button>
           </form>
           {/* End Form Register */}
+          {isLoading && (
+            <div className="loader-container">
+              <RotatingLines color="#333" height={50} width={50} />
+            </div>
+          )}
         </div>
-        {isLoading && (
-          <div className="loader-container">
-            <RotatingLines color="#333" height={50} width={50} />
-          </div>
-        )}
       </div>
-      <ToastContainer position="bottom-center" />
+      <ToastContainer stacked autoClose={1000} position="bottom-center" />
     </div>
   );
 };

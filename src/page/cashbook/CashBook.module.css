@@ -49,16 +49,15 @@
   align-items: center;
   justify-content: center;
   font-size: 1vw;
+  font-weight: bold;
   height: 2.5vh;
   width: 5vw;
-  box-shadow: var(--labelShadow);
-}
-
-.dateInputDiv {
+  text-shadow: 2px 7px 5px rgba(0, 0, 0, 0.3),
+    0px -4px 10px rgba(255, 255, 255, 0.3);
 }
 
 .dateInput {
-  font-size: 0.8vw;
+  font-size: 0.9vw;
   box-shadow: var(--labelShadow);
   width: 9vw;
   height: 3vh;
@@ -99,13 +98,10 @@
 }
 
 /* //main div  starts from here============================*/
-.cash_main {
-  /* background-color: rgb(241, 131, 131); */
-}
 
 .cash_tableDiv {
   background-color: var(--cardBg);
-  height: 39vh;
+  height: 35vh;
   border-radius: 0.5vw;
   box-shadow: var(--smallCardShadow);
   overflow: scroll;
@@ -140,12 +136,19 @@
   background-color: #f0f0f0;
   font-size: 2vw;
 }
-
-.tab_selected {
-  background-color: white;
+.inAmount {
+  background-color: lightgreen;
 }
+.outAmount {
+  background-color: #b7cdc2;
+}
+.cash_tr:hover > td {
+  background-color: #808080;
+}
+
 .tab_selected > .cash_table_Body_td {
-  font-size: 1.1vw;
+  background-color: #318153 !important;
+  color: white;
 }
 
 /* //footer div  starts from here==================================*/
@@ -182,13 +185,12 @@
   display: flex;
   align-items: center;
   justify-content: left;
-  font-size: 1.1vw;
+  font-size: 0.9vw;
   height: 3vh;
+  font-weight: bold;
   width: 9vw;
-  box-shadow: var(--labelShadow);
-}
-
-.amountInputDiv {
+  text-shadow: 2px 7px 5px rgba(0, 0, 0, 0.3),
+    0px -4px 10px rgba(255, 255, 255, 0.3);
 }
 
 .amountInput {
@@ -226,9 +228,6 @@
   animation-duration: 1s;
 }
 
-.excelExportDiv {
-}
-
 .excelExportBtn {
   background-color: var(--btnColor);
   border: none;
@@ -247,8 +246,7 @@
 }
 
 /* /=======================/modal */
-.operationModalDiv {
-}
+
 .operationModalContent {
   height: 40vh;
   display: flex;
@@ -267,6 +265,8 @@
 .divForALlbutton {
   display: flex;
   flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 .buttonText {
   text-align: center;
@@ -276,6 +276,19 @@
   animation-name: effectButtom;
   animation-duration: 1s;
 }
+
+.buttonTextCash {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1vw;
+  height: 3vh;
+  font-weight: bold;
+  width: 9vw;
+  text-shadow: 2px 7px 5px rgba(0, 0, 0, 0.3),
+    0px -4px 10px rgba(255, 255, 255, 0.3);
+}
+
 /*================ animation ==========================*/
 @keyframes effectLeft {
   0% {

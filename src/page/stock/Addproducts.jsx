@@ -1,6 +1,10 @@
+/* eslint-disable no-unused-vars */
+/* eslint-disable eqeqeq */
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable jsx-a11y/img-redundant-alt */
 import React, { useEffect, useRef, useState } from "react";
 import styles from "./AddProduct.module.css";
-import { BsFillFileEarmarkExcelFill } from "react-icons/bs";
+// import { BsFillFileEarmarkExcelFill } from "react-icons/bs";
 import { IoReloadCircleOutline } from "react-icons/io5";
 import { BiBarcodeReader } from "react-icons/bi";
 import { IoIosSave } from "react-icons/io";
@@ -11,35 +15,65 @@ import { Modal } from "antd";
 import toast, { Toaster } from "react-hot-toast";
 import { useReactToPrint } from "react-to-print";
 import ComponentToPrint from "./BarCode";
-import exportFromJSON from "export-from-json";
 import axios from "axios";
+import { FaEdit } from "react-icons/fa";
+// import exportFromJSON from "export-from-json";
+import ExportExcel from "../../components/ExportExcel";
 
 const Addproducts = () => {
+  const [toastId, setToastId] = useState(null);
+
+  const categorySelectRef = useRef(null);
+  const rackSelectRef = useRef(null);
+  const [PurchaseData, setPurchaseData] = useState([]);
+  const [salePrice, setSalePrice] = useState("");
+
   const [items, setItems] = useState([]);
-  // eslint-disable-next-line no-unused-vars
   const [fixedItems, setFixedItems] = useState([]);
+
+  // eslint-disable-next-line no-unused-vars
+  const [isDisbaled, setIsdisabled] = useState(false);
 
   //categories
   const [categories, setCategories] = useState([]);
   const [category_id, setCategoryId] = useState("");
   const [category_name, setCategoryName] = useState("");
+  const [filteredCategories, setFilteredCategories] = useState([]);
 
   //racks
   const [racks, setRacks] = useState([]);
   const [rack_id, setRackId] = useState("");
   const [rack_no, setRackNo] = useState("");
+  const [filteredRacks, setFilteredRacks] = useState([]);
 
-  //input state:
+  //product input state:
   const [product_trace_id, setProductTraceId] = useState("");
   const [product_code, setProductCode] = useState("");
   const [name, setName] = useState("");
+  const [productCategory, setProductCategory] = useState({
+    category_id: "",
+    category_name: "",
+  });
+  const [productRack, setProductRack] = useState({ rack_id: "", rack_no: "" });
   const [model, setModel] = useState("");
   const [type, setType] = useState("");
-  const [image_blob, setImageBlob] = useState(null);
+  // const [image_blob, setImageBlob] = useState(null);
+  //
+  const [image, setImage] = useState(null);
+  const [imageChange, setImageChange] = useState(false);
 
+  //========product searching:======
+  const [productSearchCode, setProductSearchCode] = useState("");
+  const [productSearchEmpty, setProductSearchEmpty] = useState(false);
+
+  //ref:
+  const productSearchCodeRef = useRef(null);
+  const productCategoryRef = useRef(null);
+  const productRackRef = useRef(null);
   //moodal & table selection
   const [productModal, setProductModal] = useState(false);
   const [categoryModal, setCategoryModal] = useState(false);
+  // eslint-disable-next-line no-unused-vars
   const [deleteCategory, setDeletecategory] = useState(false);
   const [rackModal, setRackModal] = useState(false);
   const [deleteRack, setDeleteRack] = useState(false);
@@ -50,8 +84,32 @@ const Addproducts = () => {
   const [barcodeProductCode, setBarcodeProductCode] = useState("");
   const [barcodeProductName, setBarcodeProductName] = useState("");
   const [barcodeProductType, setBarcodeProductType] = useState("");
-  const axiosInstance = axios.create({baseURL: process.env.REACT_APP_BASE_URL,})
 
+  //empty field highlight state:
+  const [categoryNameRequired, setCategoryNameRequired] = useState(false);
+  const [rackNameRequired, setRackNameRequired] = useState(false);
+
+  //product required field
+  const [productCategoryRequired, setProductCategoryRequired] = useState(false);
+  const [productRackRequired, setProductRackRequired] = useState(false);
+  const [productCodeRequired, setproductCodeRequired] = useState(false);
+  const [productNameRequired, setproductNameRequired] = useState(false);
+
+  //search state:
+  const [productSearchStatus, setProductSearchStatus] = useState(false);
+  // axios instance:
+  const axiosInstance = axios.create({
+    baseURL: process.env.REACT_APP_BASE_URL,
+  });
+
+  useEffect(() => {
+    document.title = "Add Product";
+    fetchAllProducts();
+    fetchAllCategory();
+    fetchAllRack();
+    fetchPurchaseData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   //==========get all products product=============:
   const fetchAllProducts = async () => {
     try {
@@ -60,12 +118,11 @@ const Addproducts = () => {
         setItems(JSON.parse(productData));
         setFixedItems(JSON.parse(productData));
       } else {
-        const response = await axiosInstance.get(
-          "/api/producttraces/getAll"
-        );
+        const response = await axiosInstance.get("/producttraces/getAll");
         setItems(response.data);
         setFixedItems(response.data);
         sessionStorage.setItem("productData", JSON.stringify(response.data));
+        console.log(response.data);
       }
       sessionStorage.removeItem("productData");
     } catch (error) {
@@ -73,34 +130,46 @@ const Addproducts = () => {
     }
   };
 
-  useEffect(() => {
-    fetchAllProducts();
-    document.title = "Add Product"
-    // return () => sessionStorage.removeItem("productData");
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   //================category functionality==========================:
   //get all category:
   const fetchAllCategory = async () => {
     try {
-      const { data } = await axiosInstance.get(
-        "/api/category/getAll"
-      );
+      const { data } = await axiosInstance.get("/category/getAll");
       setCategories(data);
+      setFilteredCategories(data);
     } catch (error) {
       console.log(error);
     }
   };
+
+  const fetchPurchaseData = async () => {
+    try {
+      const response = await axiosInstance.get(
+        `transactionsRouter/getAllTransactionByFiltered?operation_type_id=${2}`
+      );
+      if (response.data) {
+        setPurchaseData(response.data);
+      }
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
+  };
+
+  //filter product sale price from purchase data
+
+  const filterSalePrice =
+    PurchaseData &&
+    PurchaseData.find(
+      (data) => data.ProductTrace?.product_code === product_code
+    );
   useEffect(() => {
-    fetchAllCategory();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    const salePrice = filterSalePrice?.sale_price;
+    setSalePrice(salePrice);
+  }, [filterSalePrice]);
 
   //================category select=============
   const handleCategorySelect = (value) => {
     if (categories && categories.length > 0) {
-      // eslint-disable-next-line eqeqeq
       const selectedCategory = categories.find((c) => c.category_id == value);
       if (selectedCategory) {
         setCategoryId(selectedCategory.category_id);
@@ -108,38 +177,108 @@ const Addproducts = () => {
       } else {
         console.log("Selected category not found for value:", value);
       }
+      console.log("selectedCategory", selectedCategory);
     } else {
       console.log("Categories is empty");
     }
   };
 
-  //========save category:===
-  const saveCategory = async () => {
+  //========save category:==========
+  const saveCategory = async (event) => {
+    !category_name && setCategoryNameRequired(true);
+    setTimeout(() => {
+      setCategoryNameRequired(false);
+    }, 2600);
+    if (event.detail > 1) {
+      return;
+    }
     try {
       if (category_name) {
-        setCategoryModal(() => false);
-        toast.success(`category save successfully`);
-        fetchAllCategory();
-        resetCategory();
+        const existingCatName = categories.find(
+          (c) => c.category_name == category_name
+        );
+        if (!existingCatName) {
+          const res = await axiosInstance.post(
+            "/category/postCategoryFromAnyPage",
+            {
+              category_name,
+            }
+          );
+          setCategoryModal(() => false);
+          //toast message:
+          if (toastId) {
+            toast.dismiss(toastId); // Dismiss the previous toast
+          }
+          const newToastId = toast.success(`category save successfully`, {
+            duration: 1000,
+          });
+          setToastId(newToastId);
+          fetchAllCategory();
+          resetCategory();
+          console.log(res);
+        } else {
+          if (toastId) {
+            toast.dismiss(toastId); // Dismiss the previous toast
+          }
+          const newToastId = toast.error(`Can't post existing category!`, {
+            duration: 1000,
+          });
+          setToastId(newToastId);
+        }
       } else {
         setCategoryModal(() => false);
-        toast.error(`Can't post empty category!`);
+        //toast message:
+        if (toastId) {
+          toast.dismiss(toastId); // Dismiss the previous toast
+        }
+        const newToastId = toast.error(`Can't post  empty category!`, {
+          duration: 1000,
+        });
+        setToastId(newToastId);
       }
     } catch (error) {
       console.log(error.message);
     }
   };
+
   //update category
   const updateCategory = async () => {
+    !category_name && setCategoryNameRequired(true);
+    setTimeout(() => {
+      setCategoryNameRequired(false);
+    }, 2600);
     try {
       if (category_name && category_id) {
+        const res = await axiosInstance.put(
+          "/category/updateCategoryFromAnyPage",
+          {
+            category_name,
+            category_id,
+          }
+        );
         setCategoryModal(() => false);
-        toast.success(`category updated successfully`);
+        //toast message:
+        if (toastId) {
+          toast.dismiss(toastId);
+        }
+        const newToastId = toast.success(`category updated successfully`, {
+          duration: 1000,
+        });
+        setToastId(newToastId);
+
         fetchAllCategory();
         resetCategory();
+        console.log(res);
       } else {
         setCategoryModal(() => false);
-        toast.error(`Can't update empty category!`);
+        //toast message:
+        if (toastId) {
+          toast.dismiss(toastId);
+        }
+        const newToastId = toast.error(`Can't update empty category!`, {
+          duration: 1000,
+        });
+        setToastId(newToastId);
       }
     } catch (error) {
       console.log(error.message);
@@ -147,16 +286,36 @@ const Addproducts = () => {
   };
 
   //category delete functionality:
+
   const handleCategoryDeleteTrue = async () => {
     try {
       if (category_id) {
+        const res = await axiosInstance.delete(
+          "/category/deleteCategoryFromAnyPage",
+          { data: { category_id } }
+        );
         setCategoryModal(false);
-        toast.success(`category deleted successfully`);
+        //toast message:
+        if (toastId) {
+          toast.dismiss(toastId);
+        }
+        const newToastId = toast.success(`category deleted successfully`, {
+          duration: 1000,
+        });
+        setToastId(newToastId);
         fetchAllCategory();
         resetCategory();
+        console.log(res);
       } else {
         setCategoryModal(false);
-        toast.error(`Can't deleted empty id category!`);
+        //toast message:
+        if (toastId) {
+          toast.dismiss(toastId);
+        }
+        const newToastId = toast.error(`Can't deleted empty id category`, {
+          duration: 1000,
+        });
+        setToastId(newToastId);
       }
     } catch (error) {
       console.log(error.message);
@@ -165,24 +324,23 @@ const Addproducts = () => {
 
   //================racks functionality================================:
   //get all racks:
-  const getAllRack = async () => {
+  const fetchAllRack = async () => {
     try {
-      const { data } = await axiosInstance.get(
-        "/api/rack/getAll"
-      );
+      const { data } = await axiosInstance.get("/rack/getAll");
       setRacks(data);
+      setFilteredRacks(data);
     } catch (error) {
       console.log(error);
     }
   };
-  useEffect(() => {
-    getAllRack();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // useEffect(() => {
+  //   fetchAllRack();
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, []);
+
   //rack Handling:
   const handleRackSelect = (value) => {
     if (racks && racks.length > 0) {
-      // eslint-disable-next-line eqeqeq
       const selectedRack = racks.find((r) => r.rack_id == value);
       if (selectedRack) {
         setRackId(selectedRack.rack_id);
@@ -196,17 +354,53 @@ const Addproducts = () => {
   };
 
   //===========saveRack:=============
-  const saveRack = async () => {
+  const saveRack = async (event) => {
+    !rack_no && setRackNameRequired(true);
+    setTimeout(() => {
+      setRackNameRequired(false);
+    }, 2600);
+    if (event.detail > 1) {
+      return;
+    }
     try {
       if (rack_no) {
-        setRackModal(() => false);
-        toast.success(`rack save successfully`);
-        getAllRack();
-        resetRack();
-
+        const existingRackName = racks.find((r) => r.rack_no == rack_no);
+        if (!existingRackName) {
+          const res = await axiosInstance.post("/rack/postRackFromAnyPage", {
+            rack_no,
+          });
+          setRackModal(() => false);
+          //toast message:
+          if (toastId) {
+            toast.dismiss(toastId);
+          }
+          const newToastId = toast.success(`rack save successfully`, {
+            duration: 1000,
+          });
+          setToastId(newToastId);
+          fetchAllRack();
+          resetRack();
+          console.log(res);
+        } else {
+          //toast message:
+          if (toastId) {
+            toast.dismiss(toastId);
+          }
+          const newToastId = toast.error(`Can't post existing rack!`, {
+            duration: 1000,
+          });
+          setToastId(newToastId);
+        }
       } else {
         setCategoryModal(() => false);
-        toast.error(`Can't post empty rack!`);
+        //toast message:
+        if (toastId) {
+          toast.dismiss(toastId);
+        }
+        const newToastId = toast.error(`Can't post empty rack!`, {
+          duration: 1000,
+        });
+        setToastId(newToastId);
       }
     } catch (error) {
       console.log(error.message);
@@ -214,44 +408,86 @@ const Addproducts = () => {
   };
   //update rack
   const updateRack = async () => {
-    // try {
-    //   if (rack_no && rack_id) {
-    //     const res = await axiosInstance.put(
-    //       "http://194.233.87.22:5003/api/rack/updateRackFromAnyPage",
-    //       { rack_no, rack_id }
-    //     );
-    //     setRackModal((prevState) => false);
-    //     toast.success(`rack updated successfully`);
-    //     getAllRack();
-    //     resetRack();
-    //   } else {
-    //     setCategoryModal((prevState) => false);
-    //     toast.error(`Can't update empty rack!`);
-    //   }
-    // } catch (error) {
-    //   console.log(error.message);
-    // }
-    toast("Updated button is updated")
-  };
-
-  //rack delete functionality:
-  const handleRackDeleteTrue = async () => {
+    !rack_no && setRackNameRequired(true);
+    setTimeout(() => {
+      setRackNameRequired(false);
+    }, 2600);
     try {
-      if (rack_id) {
-        setRackModal(false);
-        toast.success(`rack ${rack_id} deleted successfully`);
-        getAllRack();
+      if (rack_no && rack_id) {
+        const res = await axiosInstance.put("/rack/updateRackFromAnyPage", {
+          rack_no,
+          rack_id,
+        });
+        setRackModal(() => false);
+        //toast message:
+        if (toastId) {
+          toast.dismiss(toastId);
+        }
+        const newToastId = toast.success(`rack updated successfully`, {
+          duration: 1000,
+        });
+        setToastId(newToastId);
+
+        fetchAllRack();
         resetRack();
+        console.log(res);
       } else {
-        setRackModal(false);
-        toast.error(`Can't deleted empty id rack!`);
+        setCategoryModal(() => false);
+        //toast message:
+        if (toastId) {
+          toast.dismiss(toastId);
+        }
+        const newToastId = toast.success(`Can't update empty rack!`, {
+          duration: 1000,
+        });
+        setToastId(newToastId);
       }
     } catch (error) {
       console.log(error.message);
     }
   };
 
-  //=============add product functionality=====================
+  //rack delete functionality:
+
+  const handleRackDeleteTrue = async () => {
+    try {
+      if (rack_id) {
+        const res = await axiosInstance.delete("/rack/deleteRackFromAnyPage", {
+          data: { rack_id },
+        });
+        setRackModal(false);
+        //toast message:
+        if (toastId) {
+          toast.dismiss(toastId);
+        }
+        const newToastId = toast.success(
+          `rack ${rack_id} deleted successfully`,
+          {
+            duration: 1000,
+          }
+        );
+        setToastId(newToastId);
+
+        fetchAllRack();
+        resetRack();
+        console.log(res);
+      } else {
+        setRackModal(false);
+        //toast message:
+        if (toastId) {
+          toast.dismiss(toastId);
+        }
+        const newToastId = toast.error(`Can't deleted empty id rack!`, {
+          duration: 1000,
+        });
+        setToastId(newToastId);
+      }
+    } catch (error) {
+      console.log(error.message);
+    }
+  };
+
+  //=============add product functionality==========================================
   //handle table row:
   const handleClickTableDataShowInputField = (d) => {
     setSelectedTabID(d.product_trace_id);
@@ -262,10 +498,16 @@ const Addproducts = () => {
 
     if (selectedProduct) {
       console.log(selectedProduct);
-      setCategoryId(selectedProduct.Category?.category_id);
-      setCategoryName(selectedProduct.Category?.category_name);
-      setRackId(selectedProduct.Rack?.rack_id);
-      setRackNo(selectedProduct.Rack?.rack_no);
+      setProductCategory(selectedProduct.Category?.category_id);
+      setProductCategory({
+        category_id: selectedProduct.Category?.category_id,
+        category_name: selectedProduct.Category?.category_name,
+      });
+
+      setProductRack({
+        rack_id: selectedProduct.Rack?.rack_id,
+        rack_no: selectedProduct.Rack?.rack_no,
+      });
       setProductTraceId(selectedProduct.product_trace_id);
       setProductCode(selectedProduct.product_code);
       setName(selectedProduct.name);
@@ -276,69 +518,159 @@ const Addproducts = () => {
       setBarcodeProductCode(selectedProduct.product_code);
       setBarcodeProductName(selectedProduct.name);
       setBarcodeProductType(selectedProduct.type);
-      if (
-        selectedProduct.image_blob &&
-        selectedProduct.image_blob.type === "Buffer" &&
-        Array.isArray(selectedProduct.image_blob.data)
-      ) {
-        const bufferData = new Uint8Array(selectedProduct.image_blob.data);
-        const blob = new Blob([bufferData], { type: "image/*" });
-        const fileReader = new FileReader();
-        fileReader.onloadend = () => {
-          setImageBlob(fileReader.result);
-        };
-        fileReader.readAsDataURL(blob);
+      //image
+      if (selectedProduct.image) {
+        setImage(selectedProduct.image_blob);
       } else {
-        setImageBlob(null);
+        setImage("");
       }
+    }
+  };
+
+  //product Category change
+  const handleProductCategoryChange = (e) => {
+    const inputValue = e.target.value.toLowerCase();
+    const filtered = categories.filter((category) =>
+      category.category_name.toLowerCase().includes(inputValue)
+    );
+
+    setFilteredCategories(filtered);
+
+    const selectedCategory = filtered.find(
+      (category) => category.category_name.toLowerCase() === inputValue
+    );
+
+    if (selectedCategory) {
+      setProductCategory({
+        category_id: selectedCategory.category_id,
+        category_name: selectedCategory.category_name,
+      });
+    } else {
+      setProductCategory({ category_id: "", category_name: inputValue });
+    }
+  };
+  //product rack change
+
+  // Handle rack input change
+  const handleProductRackChange = (e) => {
+    const inputValue = e.target.value.toLowerCase();
+
+    const filtered = racks.filter((rack) =>
+      rack.rack_no.toLowerCase().includes(inputValue)
+    );
+
+    setFilteredRacks(filtered);
+
+    const selectedRack = filtered.find(
+      (rack) => rack.rack_no.toLowerCase() === inputValue
+    );
+
+    if (selectedRack) {
+      setProductRack({
+        rack_id: selectedRack.rack_id,
+        rack_no: selectedRack.rack_no,
+      });
+    } else {
+      setProductRack({ rack_id: "", rack_no: inputValue });
     }
   };
 
   //===========save Product:=============
-  const saveProduct = async () => {
-    try {
-      if (!category_id || !rack_id || !product_code || !name) {
-        toast.error(
-          `Can't post empty category_id, rack_id, product_code & name!`
-        );
-      } else {
-        const existingProductName = items.find((item) => item.name === name);
-        if (!existingProductName) {
-          console.log(image_blob);
-          const res = await axiosInstance.post(
-            "/api/producttraces/postProductTraceFromAnyPage",
-            {
-              category_id,
-              rack_id,
-              product_code,
-              name,
-              type,
-              model,
-              image_blob,
-            }
-          );
-          toast.success(`Product saved successfully!`);
-          console.log(res);
-          resetAll();
-          fetchAllProducts();
+
+  const saveProduct = async (event) => {
+    if (event.detail > 1) {
+      return;
+    } else {
+      try {
+        if (
+          !productCategory.category_id ||
+          !productRack.rack_id ||
+          !product_code ||
+          !name
+        ) {
+          setProductCategoryRequired(true);
+          setProductRackRequired(true);
+          setproductCodeRequired(true);
+          setproductNameRequired(true);
+
+          setTimeout(() => {
+            setProductCategoryRequired(false);
+            setProductRackRequired(false);
+            setproductCodeRequired(false);
+            setproductNameRequired(false);
+          }, 2600);
+
+          setIsdisabled(false);
         } else {
-          toast.error(`Product name already exists!`);
+          const existingProductName = items.find((item) => item.name === name);
+          const existingProductCode = items.find(
+            (item) => item.product_code === product_code
+          );
+          if (!existingProductName && !existingProductCode) {
+            setIsdisabled(false);
+
+            const res = await axiosInstance.post(
+              "/producttraces/postProductTraceFromAnyPage",
+              {
+                category_id: productCategory.category_id,
+                rack_id: productRack.rack_id,
+                product_code,
+                name: name.replace(/\s+/g, " ").trim(),
+                type,
+                model,
+                image_url: image,
+              }
+            );
+            resetAllForSaveProduct();
+            toast.success(`Product saved successfully!`, { duration: 700 });
+            console.log(res);
+
+            fetchAllProducts();
+            console.log(res);
+          } else {
+            toast.error(`Product name or code already exists!`, {
+              duration: 700,
+            });
+          }
         }
+      } catch (error) {
+        console.log(error.message);
       }
-    } catch (error) {
-      console.log(error.message);
     }
   };
 
   //=========== update product===============
+
   const updateProduct = async () => {
     try {
       if (!product_trace_id) {
         toast.error(`Can't update without product_trace_id !`);
       } else {
-        toast.success(`product updated successfully`);
+        const res = await axiosInstance.put(
+          "/producttraces/updateProductTraceFromAnyPage",
+          {
+            product_trace_id,
+            category_id: productCategory.category_id,
+            rack_id: productRack.rack_id,
+            product_code,
+            name,
+            type,
+            model,
+            image_url: image,
+          }
+        );
+        //toast message:
+        if (toastId) {
+          toast.dismiss(toastId);
+        }
+        const newToastId = toast.success(`product updated successfully`, {
+          duration: 1000,
+        });
+        setToastId(newToastId);
+
         fetchAllProducts();
-        resetAll();
+        resetAllforUpdateProduct();
+        console.log(res);
       }
     } catch (error) {
       console.log(error.message);
@@ -346,45 +678,125 @@ const Addproducts = () => {
   };
 
   //product delete functionality=================:
+
   const handleProductDeleteTrue = async () => {
     try {
+      const res = await axiosInstance.delete(
+        "/producttraces/deleteProductTraceFromAnyPage",
+        { data: { product_trace_id } }
+      );
       setProductModal(false);
-      toast.success(`${product_trace_id}Product deleted successfully`);
+      //toast message:
+      if (toastId) {
+        toast.dismiss(toastId);
+      }
+      const newToastId = toast.error(
+        `${product_trace_id}Product deleted successfully`,
+        {
+          duration: 1000,
+        }
+      );
+      setToastId(newToastId);
+
       fetchAllProducts();
+      console.log(res);
     } catch (error) {
       console.log(error.message);
     }
   };
 
-  //reset functionality:
+  //handleProductSearch
+  const handleProductSearch = (value) => {
+    setProductSearchCode(value);
+    if (value) {
+      const filteredProduct = fixedItems.filter((item) =>
+        item.name.toLowerCase().includes(value.toLowerCase())
+      );
+
+      setItems(filteredProduct);
+      setProductSearchStatus(true);
+    } else {
+      setItems(fixedItems);
+      setProductSearchEmpty(true);
+      setTimeout(() => {
+        setProductSearchEmpty(false);
+      }, 2600);
+    }
+  };
+
+  // handleCleareProductSearch
+  const handleCleareProductSearch = () => {
+    setProductSearchCode("");
+    fetchAllProducts();
+    setProductSearchStatus(false);
+  };
+  //==================reset functionality==================================:
   const resetCategory = () => {
     setCategoryId("");
     setCategoryName("");
+    categorySelectRef.current.value = null;
+    setCategoryNameRequired(false);
   };
   const resetRack = () => {
     setRackId("");
     setRackNo("");
+    rackSelectRef.current.value = null;
+    setRackNameRequired(false);
   };
   const resetProduct = () => {
+    setSelectedTabID("");
     setProductTraceId("");
     setProductCode("");
     setName("");
     setModel("");
     setType("");
-    setImageBlob(null);
+    setImage(null);
+    setProductCategory({
+      category_id: "",
+      category_name: "",
+    });
+    productCategoryRef.current.value = null;
+
+    setProductRack({
+      rack_id: "",
+      rack_no: "",
+    });
+    productRackRef.current.value = null;
+    setProductCategoryRequired(false);
+    setProductRackRequired(false);
+    setproductCodeRequired(false);
+    setproductNameRequired(false);
+
+    resetBarcode();
   };
   const resetBarcode = () => {
     setBarcodeProductCode("");
     setBarcodeProductName("");
     setBarcodeProductType("");
   };
-  const resetAll = () => {
+  const resetAllForSaveProduct = () => {
+    setProductCode("");
+    setName("");
+    setType("");
+    setModel("");
+    setImage(null);
+    resetBarcode();
+  };
+  const resetAllforUpdateProduct = () => {
     resetCategory();
     resetRack();
     resetProduct();
     resetBarcode();
   };
-  //barcode print functionality:
+
+  const resetAll = () => {
+    resetCategory();
+    resetRack();
+    resetProduct();
+    resetBarcode();
+    setSalePrice("");
+  };
+  //==========barcode print functionality========:
   const componentRef = useRef();
   const print = useReactToPrint({
     content: () => componentRef.current,
@@ -394,21 +806,60 @@ const Addproducts = () => {
       print();
       resetAll();
     } else {
-      toast.error("Please select a product to print Barcode");
+      toast.error("Please select a product to print Barcode", {
+        duration: 700,
+      });
+    }
+  };
+
+  //image Upload:
+  const handleUploadImage = async () => {
+    try {
+      if (!image) {
+        toast.error("Please select an image.");
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("image", image);
+
+      const response = await axios.post(
+        "https://api.imgbb.com/1/upload?key=21299bba678bf8643a7fd481654c0303",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+
+      console.log("Response:", response);
+
+      if (response.data && response.data.data && response.data.data.url) {
+        setImage(response.data.data.url);
+        setImageChange(false);
+        toast.success("Image uploaded successfully");
+        console.log(response.data.data.url);
+      } else {
+        throw new Error("Failed to get image URL from response.");
+      }
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      toast.error("Failed to upload image");
     }
   };
 
   // =========handle xl Download==========
-  const handleXlDownload = () => {
-    if (items && items.length > 0) {
-      const data = items;
-      const fileName = "All_Product_List ";
-      const exportType = exportFromJSON.types.csv;
-      exportFromJSON({ data, fileName, exportType });
-    } else {
-      toast.error("Currently you have no data to export!");
-    }
-  };
+  // const handleXlDownload = () => {
+  //   if (items && items.length > 0) {
+  //     const data = items;
+  //     const fileName = "All_Product_List ";
+  //     const exportType = exportFromJSON.types.csv;
+  //     exportFromJSON({ data, fileName, exportType });
+  //   } else {
+  //     toast.error("Currently you have no data to export!");
+  //   }
+  // };
 
   return (
     <>
@@ -418,7 +869,9 @@ const Addproducts = () => {
           <div className={styles.card}>
             <div className={styles.Categories_div}>
               <div className={styles.sanitory_div}>
-                <h3 className={styles.text_h3}> Categories</h3>
+                <div>
+                  <h5 className={styles.text_h3}> Categories</h5>
+                </div>
                 <div className={styles.sanitory_card}>
                   <select
                     multiple
@@ -426,12 +879,14 @@ const Addproducts = () => {
                     onChange={(event) =>
                       handleCategorySelect(event.target.value)
                     }
+                    ref={categorySelectRef}
                   >
                     {categories &&
                       categories.length > 0 &&
                       categories.map((c) => (
                         <option
-                          className="category_option"
+                          key={c.category_id} // Add key prop here
+                          // className="category_option"
                           value={c.category_id}
                         >
                           {c.category_name}
@@ -454,12 +909,25 @@ const Addproducts = () => {
                 </div>
                 <div className={styles.input_div}>
                   <label htmlFor="code" className={styles.label}>
-                    Category Name:
+                    *Category Name:
                   </label>
                   <input
                     type="text"
-                    className={styles.nameInput}
+                    className={
+                      categoryNameRequired && !category_name
+                        ? `${styles.nameInput} ${styles.errorBorder}`
+                        : `${styles.nameInput}`
+                    }
                     value={category_name}
+                    onChange={(e) => {
+                      setCategoryName(e.target.value);
+                      setCategoryNameRequired(false);
+                    }}
+                    placeholder={
+                      categoryNameRequired &&
+                      !category_name &&
+                      "Category Name is required"
+                    }
                   />
                 </div>
                 <div className={styles.sanitory_btn}>
@@ -471,12 +939,9 @@ const Addproducts = () => {
                   </button>
                   <button
                     className={`${styles.sanity_icon} ${styles.add}`}
-                    onClick={() => {
-                      setCategoryModal(true);
-                      setDeletecategory(false);
-                    }}
+                    onClick={category_id ? updateCategory : saveCategory}
                   >
-                    <MdAddBox />{" "}
+                    {category_id ? <FaEdit /> : <MdAddBox />}
                   </button>
                   <button
                     className={`${styles.sanity_icon} ${styles.delete}`}
@@ -503,12 +968,13 @@ const Addproducts = () => {
           <div className={styles.card}>
             <div className={styles.Categories_div}>
               <div className={styles.sanitory_div}>
-                <h3 className={styles.text_h3}>Racks</h3>
+                <h5 className={styles.text_h3}>Racks</h5>
                 <div className={styles.sanitory_card}>
                   <select
                     multiple
                     className={styles.sanitary_select}
                     onChange={(event) => handleRackSelect(event.target.value)}
+                    ref={rackSelectRef}
                   >
                     {racks &&
                       racks.length > 0 &&
@@ -534,12 +1000,23 @@ const Addproducts = () => {
                 </div>
                 <div className={styles.input_div}>
                   <label htmlFor="code" className={styles.label}>
-                    Rack No:
+                    *Rack No:
                   </label>
                   <input
                     type="text"
-                    className={styles.nameInput}
+                    className={
+                      rackNameRequired && !rack_no
+                        ? `${styles.nameInput} ${styles.errorBorder}`
+                        : `${styles.nameInput}`
+                    }
                     value={rack_no}
+                    onChange={(e) => {
+                      setRackNo(e.target.value);
+                      setRackNameRequired(false);
+                    }}
+                    placeholder={
+                      rackNameRequired && !rack_no && "Rack No is required"
+                    }
                   />
                 </div>
                 <div className={styles.sanitory_btn}>
@@ -551,12 +1028,9 @@ const Addproducts = () => {
                   </button>
                   <button
                     className={`${styles.sanity_icon} ${styles.add}`}
-                    onClick={() => {
-                      setRackModal(true);
-                      setDeleteRack(false);
-                    }}
+                    onClick={rack_id ? updateRack : saveRack}
                   >
-                    <MdAddBox />{" "}
+                    {rack_id ? <FaEdit /> : <MdAddBox />}
                   </button>
                   <button
                     className={`${styles.sanity_icon} ${styles.delete}`}
@@ -584,7 +1058,34 @@ const Addproducts = () => {
             <div className={styles.inventory_product_div}>
               {/* /===========/table */}
               <div className={styles.product_table}>
-                <h5 className={styles.types_h3}>Products</h5>
+                {/* SearchDiv */}
+                <div className={styles.SearchDiv}>
+                  <div className={styles.Header_text}>
+                    <h5 className={styles.types_h3}>Products</h5>
+                  </div>
+                  <div className={styles.search_input_div}>
+                    <input
+                      type="text"
+                      className={
+                        productSearchEmpty
+                          ? `${styles.search_input} ${styles.errorBorder}`
+                          : `${styles.search_input} `
+                      }
+                      value={productSearchCode}
+                      onChange={(e) => handleProductSearch(e.target.value)}
+                      placeholder="Search product"
+                      list="allProducts"
+                      ref={productSearchCodeRef}
+                    />
+                    <datalist id="allProducts">
+                      {items.map((product) => (
+                        <option key={product.product_code} value={product.name}>
+                          {product.name}
+                        </option>
+                      ))}
+                    </datalist>
+                  </div>
+                </div>
 
                 <div className={styles.product_table_container}>
                   <table class={styles.tables}>
@@ -651,29 +1152,124 @@ const Addproducts = () => {
               {/* /===========/input starts from here */}
               <div className={styles.product_input}>
                 <div className={styles.product_input_container}>
+                  {/* /==================/rack category for product */}
                   <div
                     className={`${styles.input_div} ${styles.forSomeMergine}`}
                   >
                     <div className={styles.left_div}>
                       <label htmlFor="code" className={styles.pLabel}>
-                        Product Code:
+                        *Category:
                       </label>
                       <input
                         type="text"
-                        className={styles.productInput}
+                        className={
+                          productCategoryRequired &&
+                          !productCategory.category_id
+                            ? `${styles.productInput} ${styles.errorBorder}`
+                            : `${styles.productInput}`
+                        }
+                        value={productCategory.category_name}
+                        onChange={handleProductCategoryChange}
+                        list="productCategory"
+                        ref={productCategoryRef}
+                        placeholder={
+                          productCategoryRequired &&
+                          !productCategory.category_id &&
+                          "Category is required"
+                        }
+                      />
+
+                      {/* Render datalist with filtered options */}
+                      <datalist id="productCategory">
+                        {filteredCategories.map((category) => (
+                          <option
+                            key={category.category_id}
+                            value={category.category_name}
+                          >
+                            {category.category_name}
+                          </option>
+                        ))}
+                      </datalist>
+                    </div>
+                    <div className={styles.right_div}>
+                      <label htmlFor="code" className={styles.pLabel}>
+                        *Rack:
+                      </label>
+                      <input
+                        type="text"
+                        className={
+                          productRackRequired && !productRack.rack_id
+                            ? `${styles.productInput} ${styles.errorBorder}`
+                            : `${styles.productInput}`
+                        }
+                        value={productRack.rack_no}
+                        onChange={handleProductRackChange}
+                        list="productRack"
+                        ref={productRackRef}
+                        placeholder={
+                          productRackRequired &&
+                          !productRack.rack_id &&
+                          "Rack no is required"
+                        }
+                      />
+
+                      {/* Render datalist with filtered rack options */}
+                      <datalist id="productRack">
+                        {filteredRacks.map((rack) => (
+                          <option key={rack.rack_id} value={rack.rack_no} />
+                        ))}
+                      </datalist>
+                    </div>
+                  </div>
+
+                  <div
+                    className={`${styles.input_div} ${styles.forSomeMergine}`}
+                  >
+                    <div className={styles.left_div}>
+                      <label htmlFor="code" className={styles.pLabel}>
+                        *Product Code:
+                      </label>
+                      <input
+                        type="text"
+                        className={
+                          productCodeRequired && !product_code
+                            ? `${styles.productInput} ${styles.errorBorder}`
+                            : `${styles.productInput}`
+                        }
                         value={product_code}
-                        onChange={(e) => setProductCode(e.target.value)}
+                        onChange={(e) => {
+                          setProductCode(e.target.value);
+                          setproductCodeRequired(false);
+                        }}
+                        placeholder={
+                          productCodeRequired &&
+                          !product_code &&
+                          "Product Code is required"
+                        }
+                        disabled={product_trace_id ? true : false}
                       />
                     </div>
                     <div className={styles.right_div}>
                       <label htmlFor="code" className={styles.pLabel}>
-                        Name:
+                        *Name:
                       </label>
                       <input
                         type="text"
-                        className={styles.productInput}
+                        className={
+                          productNameRequired && !name
+                            ? `${styles.productInput} ${styles.errorBorder}`
+                            : `${styles.productInput}`
+                        }
                         value={name}
-                        onChange={(e) => setName(e.target.value)}
+                        onChange={(e) => {
+                          setName(e.target.value);
+                          setproductNameRequired(false);
+                        }}
+                        placeholder={
+                          productNameRequired &&
+                          !name &&
+                          "Product Name is required"
+                        }
                       />
                     </div>
                   </div>
@@ -712,9 +1308,11 @@ const Addproducts = () => {
                       >
                         <div className={`${styles.mb_1}`}>
                           <label className={`${styles.img_btn}`}>
-                            {image_blob ? (
+                            {image ? (
                               <span className={styles.imageName}>
-                                {image_blob.substring(0, 19)}
+                                {image.name
+                                  ? image.name.substring(0, 19)
+                                  : image.substring(0, 19)}
                               </span>
                             ) : (
                               <IoMdPhotos className={styles.imageIcon} />
@@ -723,14 +1321,17 @@ const Addproducts = () => {
                               type="file"
                               name="photo"
                               accept="image/*"
+                              id="photoInput"
                               onChange={(e) => {
                                 const file = e.target.files[0];
                                 if (file) {
-                                  const reader = new FileReader();
-                                  reader.onloadend = () => {
-                                    setImageBlob(reader.result);
-                                  };
-                                  reader.readAsDataURL(file);
+                                  // const reader = new FileReader();
+                                  // reader.onloadend = () => {
+                                  //   setImage(reader.result);
+                                  // };
+                                  // reader.readAsDataURL(file);
+                                  setImage(file);
+                                  setImageChange(true);
                                 }
                               }}
                               hidden
@@ -739,20 +1340,31 @@ const Addproducts = () => {
                         </div>
 
                         <div className={`${styles.mb_1} `}>
-                          {image_blob ? (
+                          {image ? (
                             <div
                               className={`${styles.text_center} ${styles.img_btn_div}`}
                             >
                               <img
-                                src={image_blob}
-                                alt=""
-                                className={`${styles.img} ${styles.img_responsive}`} 
+                                src={
+                                  imageChange
+                                    ? URL.createObjectURL(image)
+                                    : image
+                                }
+                                alt="product image"
+                                className={`${styles.img} ${styles.img_responsive}`}
+                                onClick={() => {
+                                  document.getElementById("photoInput").click();
+                                }}
+                                style={{ cursor: "pointer" }}
                               />
-                              {/* <button
-                                className={`${styles.btn} ${styles.uploadBtn}`}
-                              >
-                                UPLOAD
-                              </button> */}
+                              {imageChange && (
+                                <button
+                                  className={`${styles.btn} ${styles.uploadBtn}`}
+                                  onClick={handleUploadImage}
+                                >
+                                  UPLOAD
+                                </button>
+                              )}
                             </div>
                           ) : null}
                         </div>
@@ -767,7 +1379,7 @@ const Addproducts = () => {
                     >
                       <button
                         className={`${styles.sanity_icon} ${styles.refresh} ${styles.refresh2}`}
-                        onClick={() => resetProduct()}
+                        onClick={() => resetAll()}
                       >
                         <IoReloadCircleOutline />{" "}
                       </button>
@@ -775,7 +1387,11 @@ const Addproducts = () => {
                         className={`${styles.sanity_icon} ${styles.save}`}
                         onClick={product_trace_id ? updateProduct : saveProduct}
                       >
-                        <IoIosSave className={styles.saveIcon} />
+                        {product_trace_id ? (
+                          <FaEdit className={styles.saveIcon} />
+                        ) : (
+                          <IoIosSave className={styles.saveIcon} />
+                        )}
                       </button>
                       <button
                         className={`${styles.sanity_icon} ${styles.delete} ${styles.delete2}`}
@@ -831,14 +1447,15 @@ const Addproducts = () => {
             <div className={styles.Amount}>
               <div className={styles.amountebelDiv}>
                 <label htmlFor="Amount" className={styles.amountLabel}>
-                  Type No
+                  Sale Price
                 </label>
               </div>
               <div className={styles.amountInputDiv}>
                 <input
                   type="text"
                   className={styles.amountInput}
-                  value={barcodeProductType}
+                  value={salePrice}
+                  onChange={(e) => setSalePrice(e.target.value)}
                 />
               </div>
             </div>
@@ -857,7 +1474,7 @@ const Addproducts = () => {
             </div>
           </div>
           <div className={styles.excelExportDiv}>
-            <div className={styles.excelExportBtnDiv}>
+            {/* <div className={styles.excelExportBtnDiv}>
               <div className={styles.divForALlbutton}>
                 <button
                   className={styles.excelExportBtn}
@@ -867,10 +1484,17 @@ const Addproducts = () => {
                 </button>
                 <p className={styles.buttonText}>Excel Report</p>
               </div>
-            </div>
+            </div> */}
+
+            <ExportExcel excelData={items} fileName={"AddProduct"} />
           </div>
           <div style={{ display: "none" }}>
-            <ComponentToPrint ref={componentRef} code={product_code} />
+            <ComponentToPrint
+              ref={componentRef}
+              product={barcodeProductName}
+              code={product_code}
+              salePrice={salePrice}
+            />
           </div>
         </div>
 
@@ -928,7 +1552,6 @@ const Addproducts = () => {
             onCancel={() => setCategoryModal(false)}
             footer={null}
             closable={false}
-            // styles={{ padding: 0, margin: 0 }}
             style={{
               top: 80,
               bottom: 0,
@@ -968,61 +1591,7 @@ const Addproducts = () => {
                 </div>
               </>
             ) : (
-              <>
-                <div className={styles.rackSavemodal}>
-                  <div className={styles.sanitory_text}>
-                    <div className={styles.input_div}>
-                      <label htmlFor="code" className={styles.label}>
-                        Category Id:
-                      </label>
-                      <input
-                        type="text"
-                        className={styles.codeInput}
-                        value={category_id}
-                        disabled
-                      />
-                    </div>
-                    <div className={styles.input_div}>
-                      <label htmlFor="code" className={styles.label}>
-                        Category Name:
-                      </label>
-                      <input
-                        type="text"
-                        className={styles.nameInput}
-                        value={category_name}
-                        onChange={(e) => {
-                          setCategoryName(e.target.value);
-                        }}
-                      />
-                    </div>
-                  </div>
-                  <div className={styles.delete_modal_btn_div}>
-                    <button
-                      className={styles.delete_modal_buttonCancel2}
-                      onClick={() => {
-                        setCategoryModal(false);
-                      }}
-                    >
-                      Cancel
-                    </button>
-                    {!category_id ? (
-                      <button
-                        className={styles.delete_modal_buttoDelete2}
-                        onClick={saveCategory}
-                      >
-                        Save
-                      </button>
-                    ) : (
-                      <button
-                        className={styles.delete_modal_buttoDelete2}
-                        onClick={updateCategory}
-                      >
-                        Update
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </>
+              <></>
             )}
           </Modal>
         </div>
@@ -1077,59 +1646,7 @@ const Addproducts = () => {
                 </div>
               </div>
             ) : (
-              <div className={styles.rackSavemodal}>
-                <div className={styles.sanitory_text}>
-                  <div className={styles.input_div}>
-                    <label htmlFor="code" className={styles.label}>
-                      Rack Id:
-                    </label>
-                    <input
-                      type="text"
-                      className={styles.codeInput}
-                      value={rack_id}
-                      disabled
-                    />
-                  </div>
-                  <div className={styles.input_div}>
-                    <label htmlFor="code" className={styles.label}>
-                      Rack No:
-                    </label>
-                    <input
-                      type="text"
-                      className={styles.nameInput}
-                      value={rack_no}
-                      onChange={(e) => {
-                        setRackNo(e.target.value);
-                      }}
-                    />
-                  </div>
-                </div>
-                <div className={styles.delete_modal_btn_div}>
-                  <button
-                    className={styles.delete_modal_buttonCancel2}
-                    onClick={() => {
-                      setRackModal(false);
-                    }}
-                  >
-                    Cancel
-                  </button>
-                  {!rack_id ? (
-                    <button
-                      className={styles.delete_modal_buttoDelete2}
-                      onClick={saveRack}
-                    >
-                      Save
-                    </button>
-                  ) : (
-                    <button
-                      className={styles.delete_modal_buttoDelete2}
-                      onClick={updateRack}
-                    >
-                      Update
-                    </button>
-                  )}
-                </div>
-              </div>
+              <></>
             )}
           </Modal>
         </div>

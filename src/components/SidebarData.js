@@ -12,6 +12,8 @@ import { FaSackDollar } from "react-icons/fa6"; // Expense
 import { LiaFileInvoiceSolid} from "react-icons/lia"; //Quotation
 import { BsMegaphone} from "react-icons/bs"; //Marketing
 
+import { MdHelp } from "react-icons/md";
+
  
 export const SidebarData = [
   {
@@ -20,12 +22,15 @@ export const SidebarData = [
     icon: <AiIcons.AiFillHome />,
     iconClosed: <RiIcons.RiArrowDownSFill />,
     iconOpened: <RiIcons.RiArrowUpSFill />,
+     allowedRoles: ["ROLE_ADMIN"],
+    
   },
   {
     title: "Sales",
     icon: <FcBullish/>,
     iconClosed: <RiIcons.RiArrowDownSFill />,
     iconOpened: <RiIcons.RiArrowUpSFill />,
+     allowedRoles: ["ROLE_SELLER", "ROLE_ADMIN"],
  
     subNav: [
       {
@@ -36,13 +41,13 @@ export const SidebarData = [
       },
       {
         title: "Product Sales Report",
-        path: "/sale/sale_report",
+        path: "/sale/product-sale-report",
         icon: <IoIcons.IoIosPaper />,
         cName: "sub-nav",
       },
       {
-        title: "Customer Sales Report",
-        path: "/sale/customer_transaction",
+        title: "Customer Transactions Report",
+        path: "/sale/customer-transactions-report",
         icon: <IoIcons.IoIosPaper />,
       },
       
@@ -53,10 +58,11 @@ export const SidebarData = [
     icon: <FaLuggageCart/>,
     iconClosed: <RiIcons.RiArrowDownSFill />,
     iconOpened: <RiIcons.RiArrowUpSFill />,
+     allowedRoles: ["ROLE_SELLER", "ROLE_ADMIN"],
     subNav: [
         {
           title: "Stock Report",
-          path: "/stock/stockreport",
+          path: "/stock/stock-report",
           icon: <IoIcons.IoIosPaper />,
         },
         {
@@ -72,6 +78,7 @@ export const SidebarData = [
     icon: <TiShoppingCart />,
     iconClosed: <RiIcons.RiArrowDownSFill />,
     iconOpened: <RiIcons.RiArrowUpSFill />,
+    allowedRoles: ["ROLE_SELLER", "ROLE_ADMIN"],
  
     subNav: [
       {
@@ -81,12 +88,12 @@ export const SidebarData = [
       },
       {
         title: "Product Purchase Report",
-        path: "/purchase/productpurchasereport",
+        path: "/purchase/product-purchase-report",
         icon: <IoIcons.IoIosPaper />,
       },
       {
-        title: "Supplier Report",
-        path: "/purchase/supplierreport",
+        title: "Supplier Transactions Report",
+        path: "/purchase/supplier-transactions-report",
         icon: <IoIcons.IoIosPaper />,
       },
       
@@ -98,6 +105,7 @@ export const SidebarData = [
  
     iconClosed: <RiIcons.RiArrowDownSFill />,
     iconOpened: <RiIcons.RiArrowUpSFill />,
+     allowedRoles: ["ROLE_ADMIN"],
  
     subNav: [
       {
@@ -114,16 +122,22 @@ export const SidebarData = [
  
     iconClosed: <RiIcons.RiArrowDownSFill />,
     iconOpened: <RiIcons.RiArrowUpSFill />,
- 
+     allowedRoles: [ "ROLE_ADMIN"],
+   
     subNav: [
       {
         title: "Expense Input",
-        path: "/income_expense/expense_iput",
+        path: "/income-expense/expense-iput",
         icon: <IoIcons.IoIosPaper />,
       },
       {
         title: "Expense Report",
-        path: "/income_expense/expense_report",
+        path: "/income-expense/expense-report",
+        icon: <IoIcons.IoIosPaper />,
+      },
+      {
+        title: "Profit/Loss",
+        path: "/income-expense/profit-loss",
         icon: <IoIcons.IoIosPaper />,
       },
       
@@ -135,6 +149,7 @@ export const SidebarData = [
  
     iconClosed: <RiIcons.RiArrowDownSFill />,
     iconOpened: <RiIcons.RiArrowUpSFill />,
+     allowedRoles: [ "ROLE_ADMIN"],
  
     subNav: [
       {
@@ -151,16 +166,38 @@ export const SidebarData = [
  
     iconClosed: <RiIcons.RiArrowDownSFill />,
     iconOpened: <RiIcons.RiArrowUpSFill />,
+    allowedRoles: [ "ROLE_ADMIN"],
  
     subNav: [
       {
         title: "Marketing and Collection",
-        path: "/marketing/marketing_due_collection",
+        path: "/marketing/marketing-due-collection",
         icon: <IoIcons.IoIosPaper />,
       },
       {
         title: "Employee Setup",
-        path: "/marketing/employee_setup",
+        path: "/marketing/employee-setup",
+        icon: <IoIcons.IoIosPaper />,
+      }
+    ],
+  },
+  {
+    title: "Help Center and Contact",
+    icon: <MdHelp/>,
+ 
+    iconClosed: <RiIcons.RiArrowDownSFill />,
+    iconOpened: <RiIcons.RiArrowUpSFill />,
+    allowedRoles: [ "ROLE_ADMIN"],
+ 
+    subNav: [
+      {
+        title: "Open Support Tickets",
+        path: "/help-center/open-support-ticket",
+        icon: <IoIcons.IoIosPaper />,
+      },
+      {
+        title: "My Support Ticket",
+        path: "/help-center/my-support-ticket",
         icon: <IoIcons.IoIosPaper />,
       }
     ],

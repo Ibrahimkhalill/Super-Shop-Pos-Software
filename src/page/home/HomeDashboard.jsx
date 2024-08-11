@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import "./homeDashboard.css";
 import { useTheme } from "../../components/DashboardComponent/context/ThemeContext";
 import Footer from "../../components/DashboardComponent/Footer/Footer";
@@ -13,75 +13,154 @@ import {
   topTenSaleProducts,
   allTimeTopTen_ProductStyle,
   lastTweelveMonth_SaleStyle,
-  netIncomeFunction,
-  totalSaleFunction,
-  totalCostFunction,
   todaysIncomefunction,
   todaysTotalQuantityFunction,
   todaysSaleFunction,
+  CurrentDate,
 } from "./chartData";
 import axios from "axios";
+
+import TotalAvailableAmount from "../../components/stookquantity/TotalAvailableAmount";
 
 const HomeDashboard = () => {
   // eslint-disable-next-line no-unused-vars
   const [theme, toggle] = useTheme();
-
+  const [rows, setRows] = useState([]);
   const [items, setItems] = useState([]);
+  const [page, setPage] = useState(1);
+  const [PurchasePage, setPurchasePage] = useState(1);
+  const [pageSize, setPageSize] = useState(3000);
+  const [PurchasePageSize, setPurchasePageSize] = useState(2000);
+  const [Totalpage, setTotalPage] = useState(null);
+  const [PurchaseTotalpage, setPurchaseTotalPage] = useState(null);
+
   // eslint-disable-next-line no-unused-vars
-  const [fixedItems, setFixedItem] = useState([]);
-  const axiosInstance = axios.create({baseURL: process.env.REACT_APP_BASE_URL,})
-  console.log("process",process.env.REACT_APP_BASE_URL);
+
+  const axiosInstance = axios.create({
+    baseURL: process.env.REACT_APP_BASE_URL,
+  });
+
   //fetch all transections:
-  const fetchData = async () => {
+
+  const fetchData = useCallback(async (signal) => {
     try {
-      const transectionsData = sessionStorage.getItem("transectionsData");
-      if (transectionsData) {
-        setItems(JSON.parse(transectionsData));
-        setFixedItem(JSON.parse(transectionsData));
-      } else {
-        const response = await axiosInstance.get(
-          "/api/transactionsRouter/getAllTransactions"
-        );
-        setItems(response.data);
-        setFixedItem(response.data);
-        sessionStorage.setItem(
-          "transectionsData",
-          JSON.stringify(response.data)
-        );
-      }
+      const response_getAllTranscatioData = await axiosInstance.get(
+        `/transactionsRouter/getTransactionWithPagination?operation_type_id=1&page=1&pageSize=500`,
+        { signal }
+      );
+      const response_getPurchaseTranscatioData = await axiosInstance.get(
+        `/transactionsRouter/getTransactionWithPagination?operation_type_id=2&page=1&pageSize=2000`
+      );
+      const count = response_getPurchaseTranscatioData.data.count;
+
+      const datas_getAllTranscatioData = response_getAllTranscatioData.data;
+      setTotalPage(Math.ceil(datas_getAllTranscatioData.count / pageSize));
+      setPurchaseTotalPage(Math.ceil(count / PurchasePageSize));
     } catch (error) {
-      console.error("Error fetching or storing transectionsData Data :", error);
+      console.log(error.message);
     }
-  };
-  useEffect(() => {
-    fetchData();
-    return () => sessionStorage.removeItem("transectionsData");
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const handleSaleData = useCallback(async (pages) => {
+    try {
+      const response = await axiosInstance.get(
+        `/transactionsRouter/getTransactionWithPagination?operation_type_id=1&page=${pages}&pageSize=${pageSize}`
+      );
+
+      const filterSaleTransactions = response.data.rows;
+      setItems((prevRows) => [...prevRows, ...filterSaleTransactions]);
+      setPage((prevPage) => prevPage + 1);
+      console.log(pages, filterSaleTransactions);
+    } catch (error) {
+      console.log(error.message);
+    }
+  }, []);
+
+  const handlePurchaseData = useCallback(async (pages) => {
+    try {
+      const response = await axiosInstance.get(
+        `/transactionsRouter/getTransactionWithPagination?operation_type_id=2&page=${pages}&pageSize=${PurchasePageSize}`
+      );
+
+      const filterSaleTransactions = response.data.rows;
+      setRows((prevRows) => [...prevRows, ...filterSaleTransactions]);
+      setPurchasePage((prevPage) => prevPage + 1);
+    } catch (error) {
+      console.log(error.message);
+    }
+  }, []);
+
+  useEffect(() => {
+    document.title = "Home";
+    const controller = new AbortController();
+
+    fetchData(controller.signal);
+    return () => {
+      controller.abort();
+      setRows([])
+      setItems([])
+    };
+  }, []);
+
+  useEffect(() => {
+    if (page <= Totalpage) {
+      handleSaleData(page);
+    }
+    
+  }, [Totalpage, page]);
+
+  useEffect(() => {
+    if (PurchasePage <= PurchaseTotalpage) {
+      handlePurchaseData(PurchasePage);
+    }
+    
+  }, [PurchasePage, PurchaseTotalpage]);
+
+  const AllTimeTopTenSaleProducts = useMemo(
+    () => topTenSaleProducts(items),
+    [items]
+  );
+
+  // Last twelve individual month sale
+  const lastTweelveIndividualMonthSale = useMemo(
+    () => monthlySale(items),
+    [items]
+  );
   //=====Real time chard data handling====================
-  const AllTimeTopTenSaleProducts = topTenSaleProducts(items);
-  const lastTweelveIndividualMonthSale = monthlySale(items);
-  const LastMonthTopTenSaleProducts = monthlyTopTenSaleProducts(items);
+  const LastMonthTopTenSaleProducts = useMemo(
+    () => monthlyTopTenSaleProducts(items),
+    [items]
+  );
 
-  //todays sale:
-  const todaysTotalSale = items ? todaysSaleFunction(items) : 0;
-  //todays totalIncome:
-  const todaysTotalIncome = items ? todaysIncomefunction(items) : 0;
+  // Today's sale
+  const todaysTotalSale = useMemo(
+    () => (items ? todaysSaleFunction(items) : 0),
+    [items]
+  );
 
-  // const todaysTotalIncome = todaysSaleFunction(items);
+  // Today's total income
+  const todaysTotalIncome = useMemo(
+    () => (items ? todaysIncomefunction(items, rows) : 0),
+    [items,rows]
+  );
 
-  //todays total sell quantity:
-  const todaysTotalsellQuantity = items
-    ? todaysTotalQuantityFunction(items)
-    : 0;
-  //totalSale:
-  const totalSale = items ? totalSaleFunction(items) : 0;
-  //totalCost:
-  const totalCost = items ? totalCostFunction(items) : 0;
-  //netIncome:
-  const netIncome = items ? netIncomeFunction(items) : 0;
-  console.log("netIncome", netIncome);
+  // Today's total sell quantity
+  const todaysTotalsellQuantity = useMemo(
+    () => (items ? todaysTotalQuantityFunction(items) : 0),
+    [items]
+  );
+
+  // Total available amount
+  const { totalSaleAmount, totalPurchaseAmount } = useMemo(
+    () => TotalAvailableAmount(items, rows),
+    [items, rows]
+  );
+
+  // Net income
+  const netIncome = useMemo(
+    () => (items ? (totalSaleAmount - totalPurchaseAmount).toFixed(2) : 0),
+    [items, totalSaleAmount, totalPurchaseAmount]
+  );
   return (
     <div className="homeDashboard">
       <div className="home_dash_sideBar"></div>
@@ -90,6 +169,9 @@ const HomeDashboard = () => {
           <div className="nav_container">
             <div className="nav_left">
               <h1 className="nav_text">DASHBOARD</h1>
+            </div>
+            <div className="nav_middle">
+              <CurrentDate />{" "}
             </div>
             <div className="nav_right">
               <ThemeToggle />
@@ -105,8 +187,8 @@ const HomeDashboard = () => {
                   todaysTotalSale,
                   todaysTotalIncome,
                   todaysTotalsellQuantity,
-                  totalSale,
-                  totalCost,
+                  totalSaleAmount,
+                  totalPurchaseAmount,
                   netIncome,
                 }}
               />

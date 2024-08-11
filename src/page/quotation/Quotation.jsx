@@ -6,7 +6,10 @@ import toast, { Toaster } from "react-hot-toast";
 import axios from "axios";
 
 const Quotation = () => {
-  const axiosInstance = axios.create({baseURL: process.env.REACT_APP_BASE_URL,})
+  const [toastId, setToastId] = useState(null);
+  const axiosInstance = axios.create({
+    baseURL: process.env.REACT_APP_BASE_URL,
+  });
 
   const [items, setItems] = useState([]);
   // eslint-disable-next-line no-unused-vars
@@ -44,6 +47,10 @@ const Quotation = () => {
   const [printByEmployeeName, setPrintByEmployeeName] = useState("");
   const [employeeId, setemployeeId] = useState("");
   const [area, setArea] = useState("");
+
+  //shop name:
+  const [allShopNames, setAllShopNames] = useState([]);
+
   // const [currentDate, setCurrentDate] = useState(() => {
   //   const today = new Date();
   //   const formattedDate = today.toISOString().split("T")[0]; // Format the date as 'YYYY-MM-DD'
@@ -59,7 +66,7 @@ const Quotation = () => {
         setCalculationItems(JSON.parse(transectionsData));
       } else {
         const response = await axiosInstance.get(
-          "/api/transactionsRouter/getAllTransactions"
+          "/transactionsRouter/getAllTransactions"
         );
         setItems(response.data);
         setCalculationItems(response.data);
@@ -75,7 +82,7 @@ const Quotation = () => {
   useEffect(() => {
     fetchAllTransections();
     return () => sessionStorage.removeItem("transectionsData");
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   //print functionality:
@@ -88,14 +95,30 @@ const Quotation = () => {
     if (cart && cart.length > 0) {
       approveSaleByPrint();
       resetAll();
-      toast.success("Sale approved wait a moment to print");
+
+      //toast message:
+      if (toastId) {
+        toast.dismiss(toastId); // Dismiss the previous toast
+      }
+      const newToastId = toast.success(`Sale approved wait a moment to print`, {
+        duration: 1000,
+      });
+      setToastId(newToastId);
     } else {
-      toast.error("Cart is empty!");
+      //toast message:
+      if (toastId) {
+        toast.dismiss(toastId); // Dismiss the previous toast
+      }
+      const newToastId = toast.error(`Cart is empty!`, {
+        duration: 1000,
+      });
+      setToastId(newToastId);
     }
   };
 
   // ItemTotalAmount
   useEffect(() => {
+    document.title = "Quotation";
     const ItemTotalAmount = salePrice * saleQuantity;
     setitemTotalprice(ItemTotalAmount);
   }, [salePrice, saleQuantity]);
@@ -111,9 +134,7 @@ const Quotation = () => {
   //==========get all products product=============:
   const fetchAllProducts = async () => {
     try {
-      const response = await axiosInstance.get(
-        "/api/producttraces/getAll"
-      );
+      const response = await axiosInstance.get("/producttraces/getAll");
       setAllProducts(response.data);
     } catch (error) {
       console.error("Error fetching or storing productTrace Data :", error);
@@ -122,9 +143,7 @@ const Quotation = () => {
   //==========get all employee=============:
   const fetchAllEmployee = async () => {
     try {
-      const response = await axiosInstance.get(
-        "http://194.233.87.22:5003/api/employee/getAll"
-      );
+      const response = await axiosInstance.get("/employee/getAll");
       setAllEmployee(response.data);
     } catch (error) {
       console.error("Error fetching or storing productTrace Data :", error);
@@ -134,7 +153,7 @@ const Quotation = () => {
   useEffect(() => {
     fetchAllProducts();
     fetchAllEmployee();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const employeeFunction = (name) => {
@@ -184,7 +203,14 @@ const Quotation = () => {
       setCart((prevCart) => [...prevCart, cartItem]);
       resetCartInput();
     } else {
-      toast.error(`Can't post empty field!`);
+      //toast message:
+      if (toastId) {
+        toast.dismiss(toastId); // Dismiss the previous toast
+      }
+      const newToastId = toast.error(`Can't post empty field!`, {
+        duration: 1000,
+      });
+      setToastId(newToastId);
     }
   };
   const resetCartInput = () => {
@@ -240,6 +266,27 @@ const Quotation = () => {
     shopName,
   };
 
+  //shop name fetch:
+  const fetchShopNameData = async () => {
+    try {
+      const employeeCachedData = sessionStorage.getItem("allShopNames");
+      if (employeeCachedData) {
+        setAllShopNames(JSON.parse(employeeCachedData));
+      } else {
+        const response = await axiosInstance.get("/shopname/getAll");
+        setAllShopNames(response.data);
+        sessionStorage.setItem("allShopNames", JSON.stringify(response.data));
+      }
+      sessionStorage.removeItem("allShopNames");
+    } catch (error) {
+      console.error("Error fetching or storing employee Data :", error);
+    }
+  };
+  useEffect(() => {
+    fetchShopNameData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  console.log(allShopNames);
   return (
     <div className="full_div_quotation">
       <Toaster />
@@ -314,7 +361,7 @@ const Quotation = () => {
           <div className="container_table_quotation">
             <div classname="quotation_table_wrapper">
               <table border={3} cellSpacing={2} cellPadding={10}>
-                <tr>
+                <tr className="heading_row">
                   <th className="headerTh">SL</th>
                   <th className="headerTh">ID/Code</th>
                   <th className="headerTh">Product Name</th>
@@ -452,7 +499,15 @@ const Quotation = () => {
                 <input
                   value={shopName}
                   onChange={(e) => setShopName(e.target.value)}
+                  list="shopName"
                 />
+                <datalist id="shopName">
+                  {allShopNames.map((item, index) => (
+                    <option key={index} value={item.shop_name}>
+                      {item.shop_name}
+                    </option>
+                  ))}
+                </datalist>
               </div>
             </div>
             <div className="container_sale_summary_quotation_button">

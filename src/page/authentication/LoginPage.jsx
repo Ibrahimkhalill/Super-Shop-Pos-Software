@@ -1,4 +1,4 @@
-import React from "react";
+import React  from "react";
 import { useState } from "react";
 import supershopimg from "../../image/supershop.webp";
 import supershoplogo from "../../image/logo.png";
@@ -9,80 +9,119 @@ import { useNavigate } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { RotatingLines } from "react-loader-spinner";
-import axios from "axios";
+import { useAuth } from "./Auth";
+
 const SuperShopLogin = () => {
   const navigate = useNavigate();
   const [userName, setUserName] = useState("");
   const [password, setPassword] = useState("");
+  // eslint-disable-next-line no-unused-vars
   const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
   const [isLoading, setIsLoading] = useState(false);
   const [passShow, setPassShow] = useState(false);
+  const toastId = React.useRef(null);
+  const { login } = useAuth();
 
-  // const [selectedOption, setSelectedOption] = useState("admin");
-
-  const axiosInstance = axios.create({baseURL: process.env.REACT_APP_BASE_URL,})
   // Handle Click From Submition
   const handleFromSignIn = async (event) => {
     event.preventDefault();
 
     // Input validation
     if (!userName) {
-      toast.error("Username is required", {
-        position: "bottom-center",
-      });
+      if (!toast.isActive(toastId.current)) {
+        toastId.current = toast.error("Username is required", {
+          position: "bottom-center",
+        });
+      }
+
       return;
     }
 
     if (!password) {
-      toast.error("Password is required", {
-        position: "bottom-center",
-      });
+      if (!toast.isActive(toastId.current)) {
+        toastId.current = toast.error("Password is required", {
+          position: "bottom-center",
+        });
+      }
+
       return;
     } else if (password.length < 6) {
-      toast.error("Password must be at least 6 characters long", {
-        position: "bottom-center",
-      });
+      if (!toast.isActive(toastId.current)) {
+        toastId.current = toast.error(
+          "Password must be at least 6 characters long",
+          {
+            position: "bottom-center",
+          }
+        );
+      }
       return;
     }
 
-    // Input validation End
     setIsLoading(true);
     try {
-      await axiosInstance.post("/api/auth/signin", {
-        method: "POST",
-        headers: {
-          "Content-type": "application/json",
-        },
-        body: JSON.stringify({
-          username: userName,
-          password: password,
-          // roles: [selectedOption],
-        }),
-      })
-        .then((res) => res.json())
-        .then((resJson) => {
-          const data = JSON.parse(JSON.stringify(resJson));
-          console.log("text.accessToken" + data.accessToken);
-          // localStorage.setItem("x-access-token", data.accessToken)
-          localStorage.setItem("username", userName)
-          sleep(1000).then(() => {
-            setIsLoading(false);
-          });
-          toast("Data sent successfully!");
-          // history.push('/salepage',{ data });
-          navigate("/home", {
-            state: {
-              id: data.id,
-              username: data.username,
-              email: data.email,
-              roles: data.roles,
-              accessToken: data.accessToken,
-            },
-          });
-        });
+      await fetch(
+        "http://194.233.87.22:" +
+          process.env.REACT_APP_BACKEND_PORT +
+          "/api/auth/signin",
+        {
+          method: "POST",
+          headers: {
+            "Content-type": "application/json",
+          },
+
+          body: JSON.stringify({
+            username: userName,
+            password: password,
+            // roles: [selectedOption],
+          }),
+        }
+      ).then(async function (response) {
+        const text = await response.json();
+
+        const lastStatus = response.status;
+        if (lastStatus === 200) {
+          login(text.accessToken, text.roles[0]);
+          //console.log(textJson.accessToken, textJson.roles[0]);
+          localStorage.setItem("username", userName);
+          console.log("textJson" + text);
+          console.log("text.id" + text.id);
+          console.log("text.accessToken" + text.accessToken);
+          if (text.roles[0] === "ROLE_SELLER") {
+            navigate("/salepage", {
+              state: {
+                id: text.id,
+                username: text.username,
+                email: text.email,
+                roles: text.roles,
+                accessToken: text.accessToken,
+              },
+            });
+          } else {
+            navigate("/home", {
+              state: {
+                id: text.id,
+                username: text.username,
+                email: text.email,
+                roles: text.roles,
+                accessToken: text.accessToken,
+              },
+            });
+          }
+        }
+
+        setIsLoading(false);
+        if (!toast.isActive(toastId.current)) {
+          toastId.current = toast("Username Or Password is Not Correct.");
+        }
+        //  toast(lastStatus);
+        console.log(text); //here you can access it
+      });
     } catch (error) {
       console.error("Error saving data:" + error);
-      toast("Error sending data: " + error);
+      setIsLoading(false);
+      if (!toast.isActive(toastId.current)) {
+        toastId.current = toast("Error sending data: " + error);
+      }
     }
   };
 
@@ -91,7 +130,6 @@ const SuperShopLogin = () => {
       <img className="img-full-view" src={supershopimg} alt="" />
       <div className="bg-tranparant-background"></div>
       <div className="container_super_shop_login">
-        
         <div className="container_super_shop_all">
           {/* <img className="super-shop-img" src={supershopimg} alt="" /> */}
           <span className="heading">Sign-In</span>
@@ -135,14 +173,14 @@ const SuperShopLogin = () => {
               Sign In
             </button>
           </form>
-        {isLoading && (
-          <div className="loader-container">
-            <RotatingLines color="#333" height={50} width={50} />
-          </div>
-        )}
+          {isLoading && (
+            <div className="loader-container">
+              <RotatingLines color="#333" height={50} width={50} />
+            </div>
+          )}
         </div>
       </div>
-      <ToastContainer position="bottom-center" />
+      <ToastContainer stacked autoClose={1000} position="bottom-center" />
     </div>
   );
 };

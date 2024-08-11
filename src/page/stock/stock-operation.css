@@ -27,7 +27,10 @@
     background-color: rgba(187, 210, 198, 1);
     /* border: 1px solid white; */
   }
-  
+  .active-row-stock {
+    background-color: #1b7542;
+    color: #fff !important;
+  }
   .second_row_div_stock_operation {
     box-shadow: rgba(0, 0, 0, 0.19) 0px 10px 20px, rgba(0, 0, 0, 0.23) 0px 6px 6px;
 
@@ -57,7 +60,7 @@
     /* padding-top: 3vh; */
     column-gap: 1vw;
     width: 98vw;
-    height: 38vh;
+    height: 37.7vh;
     background-color: rgba(187, 210, 198, 1);
     /* border: 1px solid white; */
   }
@@ -91,6 +94,7 @@
     visibility: hidden;
     text-shadow: 2px 7px 5px rgba(0, 0, 0, 0.3),
     0px -4px 10px rgba(255, 255, 255, 0.3);
+    padding-left: 0.3vw;
   }
   
   .input_field_stock_operation select {
@@ -170,7 +174,7 @@
   text-align: center;
   font-size: 0.9vw;
   font-weight: bold;
-  width: 10vw;
+  width: 11vw;
   height: 3.2vh;
   padding-right: 1vw;
   text-shadow: 2px 7px 5px rgba(0, 0, 0, 0.3),
@@ -181,7 +185,7 @@
     border-radius: 4.4px;
     font-size: 1vw;
     background-color: #ffffff;
-    width: 12vw;
+    width: 11vw;
     height: 3.2vh;
     padding-left: 0.2vw;
     border: 0.001px solid red;
@@ -190,6 +194,7 @@
     animation-name: fadeIn;
     animation-fill-mode: forwards;
     visibility: hidden;
+    padding-left: 0.3vw;
    
 }
   .search_div_stock_operation {
@@ -201,7 +206,6 @@
     max-height: 600px;
     overflow-y: scroll;
     scrollbar-color: rgb(116, 122, 119) rgba(187, 210, 198, 1) !important;
-    
     box-shadow: rgba(0, 0, 0, 0.3) 0px 19px 38px,
     rgba(0, 0, 0, 0.22) 0px 15px 12px;
     border-radius: 2vh;
@@ -211,6 +215,7 @@
     width: 97vw !important;
     font-size: 1vw;
     animation-name: effectLeft;
+    animation-duration: 1s;
     background-color: rgba(136, 179, 154, 1);
   }
   
@@ -226,7 +231,7 @@
   
   .table_wrapper_stock_operation table td {
     text-align: center;
-    font-size: 0.8vw;
+    font-size: 0.9vw;
     cursor: pointer;
   }
   .table_wrapper_stock_operation table tr:hover{

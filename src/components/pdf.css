@@ -66,19 +66,36 @@
     column-gap: 40vw;
     margin-left: 2vw;
 }
+.supplier-info{
+    font-size: 2vw;
+
+}
+.Supplier-invoice{
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    font-weight: normal !important;
+}
 
 .invoice-details {
     font-size: 14px;
 }
+.supplier-invoice-details{
+    font-size: 2vw;
+}
+
 
 .table2 {
     width: 30%;
     display: grid;
     grid-template-columns: auto auto ;
-    
+   
     position: absolute;
-    right: 0;
-    top:6.8vw;
+    
+    left: 75.3%;
+    top:110%;
+   
 }
 
 .body {
@@ -99,7 +116,11 @@
     display: grid;
     grid-template-columns: auto auto auto auto auto auto;
    
-   
+}
+.Purchase-table{
+    width: 100%;
+    display: grid;
+    grid-template-columns: auto auto auto auto auto ;
 }
 
 .product-table th {

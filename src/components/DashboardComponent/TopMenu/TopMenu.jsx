@@ -1,8 +1,5 @@
 import React from "react";
-import {
-  FaChartBar,
-  FaLuggageCart,
-} from "react-icons/fa";
+import { FaChartBar, FaLuggageCart } from "react-icons/fa";
 import { FaChartLine } from "react-icons/fa";
 import { FaChartArea } from "react-icons/fa";
 
@@ -22,7 +19,7 @@ const TopMenu = ({ data }) => {
           <FaChartLine style={{ color: "#dd4f4f", fontSize: "3.2vw" }} />
         </div>
         <div className="details_div">
-          <h1 className="details_title">Today sales</h1>
+          <h1 className="details_title">Today's sales</h1>
           <h2 className="amount">{data.todaysTotalSale} Tk</h2>
         </div>
       </div>
@@ -31,7 +28,7 @@ const TopMenu = ({ data }) => {
           <FaChartArea style={{ color: "#f39c12", fontSize: "3.2vw" }} />
         </div>
         <div className="details_div">
-          <h1 className="details_title">Today Income</h1>
+          <h1 className="details_title">Today's Income</h1>
           <h2 className="amount">{data.todaysTotalIncome} Tk</h2>
         </div>
       </div>
@@ -40,7 +37,7 @@ const TopMenu = ({ data }) => {
           <FaLuggageCart style={{ color: "	#7158E2", fontSize: "3.2vw" }} />
         </div>
         <div className="details_div">
-          <h1 className="details_title">Total Quantity</h1>
+          <h1 className="details_title">Sale Quantity</h1>
           <h2 className="amount">{data.todaysTotalsellQuantity}</h2>
         </div>
       </div>
@@ -50,7 +47,7 @@ const TopMenu = ({ data }) => {
         </div>
         <div className="details_div">
           <h1 className="details_title">Total Sales</h1>
-          <h2 className="amount">{data.totalSale} Taka</h2>
+          <h2 className="amount">{data.totalSaleAmount} Taka</h2>
         </div>
       </div>
       <div className="top_g top_g5">
@@ -59,7 +56,7 @@ const TopMenu = ({ data }) => {
         </div>
         <div className="details_div">
           <h1 className="details_title">Total Purchase</h1>
-          <h2 className="amount">{data.totalCost} Tk</h2>
+          <h2 className="amount">{data.totalPurchaseAmount} Tk</h2>
         </div>
       </div>
       <div className="top_g top_g6">

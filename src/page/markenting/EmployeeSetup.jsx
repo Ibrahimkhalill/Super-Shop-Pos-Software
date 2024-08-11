@@ -9,6 +9,8 @@ import toast, { Toaster } from "react-hot-toast";
 import { MdDeleteForever } from "react-icons/md";
 import axios from "axios";
 const EmployeeSetup = () => {
+  const [toastId, setToastId] = useState(null);
+
   //state management for employee save:
   const [employeeData, setEmployeeData] = useState([]);
   const [fixedEmployeeData, setfixedEmployeeData] = useState([]);
@@ -39,7 +41,9 @@ const EmployeeSetup = () => {
   const [shop_name_id, setShopName] = useState("1");
   //table row click handling:
   const [selectedTabID, setSelectedTabID] = useState(null);
-  const axiosInstance = axios.create({baseURL: process.env.REACT_APP_BASE_URL,})
+  const axiosInstance = axios.create({
+    baseURL: process.env.REACT_APP_BASE_URL,
+  });
 
   const fetchData = async () => {
     try {
@@ -48,9 +52,7 @@ const EmployeeSetup = () => {
         setEmployeeData(JSON.parse(employeeCachedData));
         setfixedEmployeeData(JSON.parse(employeeCachedData));
       } else {
-        const response = await axiosInstance.get(
-          "/api/employee/getAll"
-        );
+        const response = await axiosInstance.get("/employee/getAll");
         setEmployeeData(response.data);
         setfixedEmployeeData(response.data);
         sessionStorage.setItem("employeeData", JSON.stringify(response.data));
@@ -61,9 +63,10 @@ const EmployeeSetup = () => {
     }
   };
   useEffect(() => {
+    document.title = "Employee Setup";
     fetchData();
     // return () => sessionStorage.removeItem("employeeData");
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ===============saveEmployee============
@@ -79,10 +82,17 @@ const EmployeeSetup = () => {
         !designation ||
         !joining_date
       ) {
-        toast.error(`Can't update empty field !`);
+        //toast message:
+        if (toastId) {
+          toast.dismiss(toastId); // Dismiss the previous toast
+        }
+        const newToastId = toast.error(`Can't save empty field !`, {
+          duration: 1000,
+        });
+        setToastId(newToastId);
       } else {
         const res = await axiosInstance.post(
-          "/api/employee/postEmployeeFromAnyPage",
+          "/employee/postEmployeeFromAnyPage",
           {
             mobile,
             address,
@@ -96,7 +106,15 @@ const EmployeeSetup = () => {
         );
         resetEmployee();
         fetchData();
-        toast.success(`employee save successfully`);
+
+        //toast message:
+        if (toastId) {
+          toast.dismiss(toastId); // Dismiss the previous toast
+        }
+        const newToastId = toast.success(`employee save successfully !`, {
+          duration: 1000,
+        });
+        setToastId(newToastId);
         console.log(res);
       }
     } catch (error) {
@@ -108,10 +126,17 @@ const EmployeeSetup = () => {
   const updateEmployee = async () => {
     try {
       if (!update_employee_id) {
-        toast.error(`Can't update empty field !`);
+        //toast message:
+        if (toastId) {
+          toast.dismiss(toastId); // Dismiss the previous toast
+        }
+        const newToastId = toast.error(`Can't update empty field !`, {
+          duration: 1000,
+        });
+        setToastId(newToastId);
       } else {
         const res = await axiosInstance.put(
-          "/api/employee/updateEmployeeFromAnyPage",
+          "/employee/updateEmployeeFromAnyPage",
           {
             employee_id: update_employee_id,
             mobile: update_mobile,
@@ -128,7 +153,16 @@ const EmployeeSetup = () => {
         );
         resetuUpdatedEmployee();
         fetchData();
-        toast.success(`employee updated successfully`);
+
+        //toast message:
+        if (toastId) {
+          toast.dismiss(toastId); // Dismiss the previous toast
+        }
+        const newToastId = toast.success(`employee updated successfully`, {
+          duration: 1000,
+        });
+        setToastId(newToastId);
+
         console.log(res);
       }
     } catch (error) {
@@ -137,18 +171,47 @@ const EmployeeSetup = () => {
   };
   //======deleteEmployee============
   const deleteEmployee = async () => {
-    try {
-      // eslint-disable-next-line no-unused-vars
-      const res = await axiosInstance.delete(
-        `/api/employee/deleteEmployeeFromAnyPage`,
-        { data: { employee_id: update_employee_id } }
-      );
-      resetuUpdatedEmployee();
-      toast.success(`Employee ${update_name} deleted succefully`);
-      fetchData();
-    } catch (error) {
-      console.log(error.message);
+    if (toastId) {
+      toast.dismiss(toastId); // Dismiss the previous toast
     }
+    const newToastId = toast.error(
+      `this action will be added in next update!`,
+      {
+        duration: 1000,
+      }
+    );
+    setToastId(newToastId);
+    // try {
+    //   // eslint-disable-next-line no-unused-vars
+    //   const res = await axiosInstance.delete(
+    //     `/employee/deleteEmployeeFromAnyPage`,
+    //     { data: { employee_id: update_employee_id } }
+    //   );
+    //   resetuUpdatedEmployee();
+
+    //   //toast message:
+    //   if (toastId) {
+    //     toast.dismiss(toastId); // Dismiss the previous toast
+    //   }
+    //   const newToastId = toast.success(
+    //     `Employee ${update_name} deleted succefully!`,
+    //     {
+    //       duration: 1000,
+    //     }
+    //   );
+    //   setToastId(newToastId);
+    //   fetchData();
+    // } catch (error) {
+    //   console.log(error.message);
+    //   //toast message:
+    //   if (toastId) {
+    //     toast.dismiss(toastId); // Dismiss the previous toast
+    //   }
+    //   const newToastId = toast.error(`Please select aemployee to delete!`, {
+    //     duration: 1000,
+    //   });
+    //   setToastId(newToastId);
+    // }
   };
 
   //reset employee field
@@ -196,29 +259,49 @@ const EmployeeSetup = () => {
       }
     } else {
       fetchData();
-      toast.error("Employee does not exist!");
+      //toast message:
+      if (toastId) {
+        toast.dismiss(toastId); // Dismiss the previous toast
+      }
+      const newToastId = toast.error(`Employee does not exist!`, {
+        duration: 1000,
+      });
+      setToastId(newToastId);
     }
   };
 
   //handle table row:
   const handleClickTableDataShowInputField = (employee) => {
-    setSelectedTabID(employee.employee_id);
-    const selectedEmployee =
-      employeeData &&
-      employeeData.length > 0 &&
-      employeeData.find((i) => i.employee_id === employee.employee_id);
+    if (selectedTabID === employee.employee_id) {
+      setSelectedTabID(null);
+      setUpdateEmployeeId("");
+      setUpdateName("");
+      setUpdateMobile("");
+      setUpdateAddress("");
+      setUpdateNid("");
+      setUpdateEmail("");
+      setUpdateSalary("");
+      setUpdateDesignation("");
+      setUpdateJoiningDate(""); // Extract date part
+    } else {
+      setSelectedTabID(employee.employee_id);
+      const selectedEmployee =
+        employeeData &&
+        employeeData.length > 0 &&
+        employeeData.find((i) => i.employee_id === employee.employee_id);
 
-    if (selectedEmployee) {
-      console.log(selectedEmployee);
-      setUpdateEmployeeId(selectedEmployee.employee_id);
-      setUpdateName(selectedEmployee.name);
-      setUpdateMobile(selectedEmployee.mobile);
-      setUpdateAddress(selectedEmployee.address);
-      setUpdateNid(selectedEmployee.nid);
-      setUpdateEmail(selectedEmployee.email);
-      setUpdateSalary(selectedEmployee.salary);
-      setUpdateDesignation(selectedEmployee.designation);
-      setUpdateJoiningDate(selectedEmployee.joining_date.split("T")[0]); // Extract date part
+      if (selectedEmployee) {
+        console.log(selectedEmployee);
+        setUpdateEmployeeId(selectedEmployee.employee_id);
+        setUpdateName(selectedEmployee.name);
+        setUpdateMobile(selectedEmployee.mobile);
+        setUpdateAddress(selectedEmployee.address);
+        setUpdateNid(selectedEmployee.nid);
+        setUpdateEmail(selectedEmployee.email);
+        setUpdateSalary(selectedEmployee.salary);
+        setUpdateDesignation(selectedEmployee.designation);
+        setUpdateJoiningDate(selectedEmployee.joining_date.split("T")[0]); // Extract date part
+      }
     }
   };
 
@@ -355,13 +438,14 @@ const EmployeeSetup = () => {
               <th className="employee_table_th">Email</th>
               <th className="employee_table_th">Salary</th>
               <th className="employee_table_th">Designation</th>
-              <th className="employee_table_th">Joining Day</th>
+              <th className="employee_table_th">Joining Date</th>
             </tr>
             <tbody>
               {employeeData &&
                 employeeData.length > 0 &&
                 employeeData.map((employee) => (
                   <tr
+                  style={{cursor:"pointer"}}
                     key={employee.employee_id}
                     className={`
           ${
@@ -386,7 +470,7 @@ const EmployeeSetup = () => {
                       {employee.designation}
                     </td>
                     <td className="employee_table_td">
-                      {employee.joining_date}
+                      {employee.joining_date.split("T")[0]}
                     </td>
                   </tr>
                 ))}
@@ -403,10 +487,7 @@ const EmployeeSetup = () => {
           <div className="create_employee_setup_column1">
             <div className="input_field_employee_setup">
               <label>*ID</label>
-              <input
-                value={update_employee_id}
-                onChange={(e) => setMobile(e.target.value)}
-              />
+              <input value={update_employee_id} disabled />
             </div>
             <div className="input_field_employee_setup">
               <label>*Name</label>

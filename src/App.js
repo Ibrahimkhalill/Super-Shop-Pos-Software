@@ -1,179 +1,225 @@
-import LoginPage from './page/authentication/LoginPage';
+import LoginPage from "./page/authentication/LoginPage";
 import {
   BrowserRouter as Router,
   Routes,
   Route,
- 
+  Navigate,
 } from "react-router-dom";
 // import { AuthProvider} from './page/authentication/Auth';
-import PurchaseOperation from './page/purchase/PurchaseOperation';
-import Sidebar from "./components/Sidebar"
-import StockOperation from './page/stock/StockOperation';
-import PurchasesReport from './page/purchase/PurchasesReport';
-import SupplierReport from "./page/purchase/SupplierReport"
-import SalePage from './page/sale/SalePage';
-import Signup from "./page/authentication/SignUp"
-import Home from "./page/home/HomeDashboard"
-import SaleReport from './page/sale/SaleReport';
-import CustomerTranscationReport from './page/sale/CustomerTransactionReport';
-import Addproducts from './page/stock/Addproducts';
-import CashBook from './page/cashbook/CashBook';
-import EmployeeSetup from "./page/markenting/EmployeeSetup"
-import MarketingDueCollection from './page/markenting/MarketingDueCollection';
-import ExpanceReport from './page/income-expense/ExpenseReport';
-import ExpanceInput from './page/income-expense/ExpenseInput';
-import Quotation from './page/quotation/Quotation';
-
+import PurchaseOperation from "./page/purchase/PurchaseOperation";
+import Sidebar from "./components/Sidebar";
+import StockOperation from "./page/stock/StockOperation";
+import PurchasesReport from "./page/purchase/PurchasesReport";
+import SupplierReport from "./page/purchase/SupplierReport";
+import SalePage from "./page/sale/SalePage";
+import Signup from "./page/authentication/SignUp";
+import Home from "./page/home/HomeDashboard";
+import SaleReport from "./page/sale/SaleReport";
+import CustomerTranscationReport from "./page/sale/CustomerTransactionReport";
+import Addproducts from "./page/stock/Addproducts";
+import CashBook from "./page/cashbook/CashBook";
+import EmployeeSetup from "./page/markenting/EmployeeSetup";
+import MarketingDueCollection from "./page/markenting/MarketingDueCollection";
+import ExpanceReport from "./page/income-expense/ExpenseReport";
+import ExpanceInput from "./page/income-expense/ExpenseInput";
+import Quotation from "./page/quotation/Quotation";
+import { AuthProvider, useAuth } from "./page/authentication/Auth";
+import DateBaseIncome from "./page/income-expense/DateBaseIncome";
+import HelpContactPage from "./page/help and contact/HelpContactPage";
+import MySupportTicket from "./page/help and contact/MySupportTicket";
 
 function App() {
   return (
     <Router>
-      
-    <Routes>
-     
-      <Route path="/signup" element={<Signup />} />
-      <Route path="/" element={<LoginPage />} />
-      <Route
-              path="/home"
-              element={
-                <div>
-                  <Sidebar/>
-                  <Home/>
-                </div>
-              }
-            ></Route>
-      <Route
-              path="/purchase" 
-              element={
-                <div>
-                  <Sidebar pageName="Purchase"/>
-                  <PurchaseOperation/>
-                </div>
-              }
-            ></Route>
-            <Route
-              path="/purchase/productpurchasereport" 
-              element={
-                <div>
-                  <Sidebar pageName="Purchase Report"/>
-                  <PurchasesReport/>
-                </div>
-              }
-            ></Route>
-            <Route
-              path="/stock/stockreport"
-              element={
-                <div>
-                  <Sidebar pageName="Stock Report"/>
-                  <StockOperation/>
-                </div>
-              }
-            ></Route>
-            <Route
-              path="/purchase/supplierreport"
-              element={
-                <div>
-                  <Sidebar pageName="Supplier Report"/>
-                  <SupplierReport/>
-                </div>
-              }
-            ></Route>
-            <Route
-              path="/salepage"
-              element={
-                <div>
-                  <Sidebar pageName="Sale Page"/>
-                  <SalePage/>
-                </div>
-              }
-            ></Route>
-            <Route
-              path="/stock/addproduct"
-              element={
-                <div>
-                  <Sidebar pageName="Add Product"/>
-                  <Addproducts/>
+      <AuthProvider>
+        <Routes>
+          <Route path="/" element={<LoginPage />} />
+          <Route
+            path="/signup"
+            element={<AdminProtectedRoute component={<Signup />} />}
+          />
+          <Route
+            path="/home"
+            element={
+              <div>
+                <Sidebar />
+                <AdminProtectedRoute component={<Home />} />
               </div>
-              }
-            ></Route>
-            <Route
-              path="/sale/sale_report"
-              element={
-                <div>
-                  <Sidebar pageName="Sale Report"/>
-                  <SaleReport/>
-                </div>
-              }
-            ></Route>
-            <Route
-              path="/sale/customer_transaction"
-              element={
-                <div>
-                  <Sidebar pageName="Customer Transaction"/>
-                  <CustomerTranscationReport/>
-                </div>
-              }
-            ></Route>
-            <Route
-              path="/cashbook"
-              element={
-                <div>
-                  <Sidebar pageName="Cashbook"/>
-                  <CashBook/>
-                </div>
-              }
-            ></Route>
-            <Route
-              path="/income_expense/expense_iput"
-              element={
-                <div>
-                  <Sidebar pageName="Expense Input"/>
-                  <ExpanceInput/>
-                </div>
-              }
-            ></Route>
-            <Route
-              path="/income_expense/expense_report"
-              element={
-                <div>
-                  <Sidebar pageName="Expense Report"/>
-                  <ExpanceReport/>
-                </div>
-              }
-            ></Route>
-            <Route
-              path="/quotation"
-              element={
-                <div>
-                  <Sidebar pageName="Quotation"/>
-                  <Quotation/>
-                </div>
-              }
-            ></Route>
-            <Route
-              path="/marketing/marketing_due_collection"
-              element={
-                <div>
-                  <Sidebar pageName="Maketing Due Collection"/>
-                  <MarketingDueCollection/>
-                </div>
-              }
-            ></Route>
-            <Route
-              path="/marketing/employee_setup"
-              element={
-                <div>
-                  <Sidebar pageName="Employee Setup"/>
-                  <EmployeeSetup/>
-                </div>
-              }
-            ></Route>
-            
-    </Routes>
-    
-  </Router>
-   
+            }
+          ></Route>
+          <Route
+            path="/purchase"
+            element={
+              <div>
+                <Sidebar pageName="Purchase" />
+                <ProtectedRoute component={<PurchaseOperation />} />
+              </div>
+            }
+          ></Route>
+          <Route
+            path="/purchase/product-purchase-report"
+            element={
+              <div>
+                <Sidebar pageName="Product Purchase Report" />
+                <ProtectedRoute component={<PurchasesReport />} />
+              </div>
+            }
+          ></Route>
+          <Route
+            path="/stock/stock-report"
+            element={
+              <div>
+                <Sidebar pageName="Stock Report" />
+                <ProtectedRoute component={<StockOperation />} />
+              </div>
+            }
+          ></Route>
+          <Route
+            path="/purchase/supplier-transactions-report"
+            element={
+              <div>
+                <Sidebar pageName="Supplier Transactions Report" />
+                <ProtectedRoute component={<SupplierReport />} />
+              </div>
+            }
+          ></Route>
+          <Route
+            path="/salepage"
+            element={
+              <div>
+                <Sidebar pageName="Sale Page" />
+                <ProtectedRoute component={<SalePage />} />
+              </div>
+            }
+          ></Route>
+          <Route
+            path="/stock/addproduct"
+            element={
+              <div>
+                <Sidebar pageName="Add Product" />
+                <ProtectedRoute component={<Addproducts />} />
+              </div>
+            }
+          ></Route>
+          <Route
+            path="/sale/product-sale-report"
+            element={
+              <div>
+                <Sidebar pageName="Product Sale Report" />
+                <ProtectedRoute component={<SaleReport />} />
+              </div>
+            }
+          ></Route>
+          <Route
+            path="/sale/customer-transactions-report"
+            element={
+              <div>
+                <Sidebar pageName="Customer Transactions Report" />
+                <ProtectedRoute component={<CustomerTranscationReport />} />
+              </div>
+            }
+          ></Route>
+          <Route
+            path="/cashbook"
+            element={
+              <div>
+                <Sidebar pageName="Cashbook" />
+                <AdminProtectedRoute component={<CashBook />} />
+              </div>
+            }
+          ></Route>
+          <Route
+            path="/income-expense/expense-iput"
+            element={
+              <div>
+                <Sidebar pageName="Expense Input" />
+                <AdminProtectedRoute component={<ExpanceInput />} />
+              </div>
+            }
+          ></Route>
+          <Route
+            path="/income-expense/expense-report"
+            element={
+              <div>
+                <Sidebar pageName="Expense Report" />
+                <AdminProtectedRoute component={<ExpanceReport />} />
+              </div>
+            }
+          ></Route>
+          <Route
+            path="/income-expense/profit-loss"
+            element={
+              <div>
+                <Sidebar pageName="Profit/Loss" />
+                <AdminProtectedRoute component={<DateBaseIncome />} />
+              </div>
+            }
+          ></Route>
+          <Route
+            path="/quotation"
+            element={
+              <div>
+                <Sidebar pageName="Quotation" />
+                <AdminProtectedRoute component={<Quotation />} />
+              </div>
+            }
+          ></Route>
+          <Route
+            path="/marketing/marketing-due-collection"
+            element={
+              <div>
+                <Sidebar pageName="Marketing Due Collection" />
+                <AdminProtectedRoute component={<MarketingDueCollection />} />
+              </div>
+            }
+          ></Route>
+          <Route
+            path="/marketing/employee-setup"
+            element={
+              <div>
+                <Sidebar pageName="Employee Setup" />
+                <AdminProtectedRoute component={<EmployeeSetup />} />
+              </div>
+            }
+          ></Route>
+
+          <Route
+            path="/help-center/open-support-ticket"
+            element={
+              <div>
+                <Sidebar pageName="Open Ticket Support" />
+                <AdminProtectedRoute component={<HelpContactPage />} />
+              </div>
+            }
+          ></Route>
+          <Route
+            path="/help-center/my-support-ticket"
+            element={
+              <div>
+                <Sidebar pageName="Open Ticket Support" />
+                <AdminProtectedRoute component={<MySupportTicket />} />
+              </div>
+            }
+          ></Route>
+        </Routes>
+      </AuthProvider>
+    </Router>
   );
 }
+const ProtectedRoute = ({ component }) => {
+  const { isLoggedIn } = useAuth();
 
+  return isLoggedIn ? component : <Navigate to="/" replace />;
+};
+
+const AdminProtectedRoute = ({ component }) => {
+  const admin = localStorage.getItem("role");
+  const { isLoggedIn } = useAuth();
+
+  return isLoggedIn && admin === "ROLE_ADMIN" ? (
+    component
+  ) : (
+    <Navigate to="/" replace />
+  );
+};
 export default App;

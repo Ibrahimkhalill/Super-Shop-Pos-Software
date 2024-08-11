@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-vars */
-import React from "react";
+import React, { useEffect } from "react";
 import "./marketing-due-collection.css";
 import { useState } from "react";
 
@@ -16,6 +16,10 @@ const MarketingDueCollection = () => {
   const [employeeName, setEmployeeName] = useState([]);
   const [employeeId, setEmployeeId] = useState([]);
   const [isLoading, setIsLoading] = useState([]);
+
+  useEffect(()=>{
+   document.title="Marketing Due Collection"
+  },[])
 
   return (
     <div className="full_div_marketing_due_collection_report_supershop">

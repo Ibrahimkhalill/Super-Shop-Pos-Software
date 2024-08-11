@@ -1,10 +1,13 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import style from "./CashBook.module.css";
 import { Modal } from "antd";
 import { FaSearch } from "react-icons/fa";
-import { BsFillFileEarmarkExcelFill } from "react-icons/bs";
+import { RotatingLines } from "react-loader-spinner";
+import ExcelExport from "../../components/ExportExcel";
 import toast, { Toaster } from "react-hot-toast";
-import exportFromJSON from "export-from-json";
+import { IoIosArrowBack } from "react-icons/io";
+import { IoIosArrowForward } from "react-icons/io";
+
 import { MdOutlineViewCozy } from "react-icons/md";
 import axios from "axios";
 
@@ -12,9 +15,15 @@ const CashBook = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [items, setItems] = useState([]);
   const [calculationItems, setCalculationItems] = useState([]);
+  const [paginationVisible, setPaginationVisible] = useState(true);
+  const [page, setPage] = useState(1);
+  const [Totalpage, setTotalPage] = useState(null);
+  const [pageSize, setPageSize] = useState(500);
 
   const [selectedTabID, setSelectedTabID] = useState(null);
-  const axiosInstance = axios.create({baseURL: process.env.REACT_APP_BASE_URL,})
+  const axiosInstance = axios.create({
+    baseURL: process.env.REACT_APP_BASE_URL,
+  });
 
   //date state:
   const [singleDate, setSingleDate] = useState("");
@@ -25,42 +34,93 @@ const CashBook = () => {
   const toDateRef = useRef();
   //transection state :
   // const [transaction_id, setTransectionId] = useState("");
- 
 
   //cash calsulation state
   const [inAmount, setInAmount] = useState("");
   const [outAmount, setOutAmount] = useState("");
   const [totalCash, setTotalCash] = useState("");
-
+  const [data, setData] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [CalculationVisible, setCalculationVisible] = useState(false);
   //fetch all transections:
-  const fetchData = async () => {
+  const handleClickShowAll = useCallback(async (pages) => {
     try {
-      const transectionsData = sessionStorage.getItem("transectionsData");
-      if (transectionsData) {
-        setItems(JSON.parse(transectionsData));
-        setCalculationItems(JSON.parse(transectionsData));
-      } else {
-        const response = await axiosInstance.get(
-          "/api/transactionsRouter/getAllTransactions"
-        );
-        setItems(response.data);
-        setCalculationItems(response.data);
-        sessionStorage.setItem(
-          "transectionsData",
-          JSON.stringify(response.data)
-        );
-      }
+      setIsLoading(true);
+      const response = await axiosInstance.get(
+        `/transactionsRouter/getAllTransactions?pageSize=${pageSize}&page=${pages}`
+      );
+
+      setTotalPage(Math.ceil(response.data.count / pageSize));
+      setIsLoading(false);
+    } catch (error) {
+      console.log(error.message);
+    }
+  }, []);
+
+  const fetchData = async (pages) => {
+    try {
+      setIsLoading(true);
+
+      const response = await axiosInstance.get(
+        `/transactionsRouter/getAllTransactions?pageSize=${pageSize}&page=${pages}`
+      );
+
+      const filteredInAmountData = Object.values(
+        response.data.rows.reduce((acc, curr) => {
+          if (!acc[curr.invoice_no] && curr.operation_type_id === 1) {
+            acc[curr.invoice_no] = curr;
+          }
+          return acc;
+        }, {})
+      );
+      const filteredOutData = Object.values(
+        response.data.rows.reduce((acc, curr) => {
+          if (!acc[curr.invoice_no] && curr.operation_type_id === 2) {
+            acc[curr.invoice_no] = curr;
+          }
+          return acc;
+        }, {})
+      );
+      const expenseData = response.data.rows.filter(
+        (acc) => acc.operation_type_id === 3
+      );
+      const filteredData = [
+        ...filteredInAmountData,
+        ...filteredOutData,
+        ...expenseData,
+      ];
+
+      setData(response.data.rows);
+      setItems(filteredData);
+      setCalculationItems(filteredData);
+      setIsLoading(false);
     } catch (error) {
       console.error("Error fetching or storing transectionsData Data :", error);
     }
   };
+  const fetchIncomeExpense = async () => {
+    try {
+      const response = await axiosInstance.get(
+        `/transactionsRouter/getIncomeExpense`
+      );
+      if (response.data) {
+        setInAmount(response.data.InAmount);
+        setOutAmount(response.data.OutAmount);
+        setTotalCash(parseFloat(response.data.Cash).toFixed(2));
+      }
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
+  };
   useEffect(() => {
-    fetchData();
-    return () => sessionStorage.removeItem("transectionsData");
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    document.title = "CashBook";
+    fetchIncomeExpense();
+    fetchData(1);
+    handleClickShowAll(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  //handle table row:
+  //handle table row:http://194.233.87.22:5004/api/
   const handleClickTableDataShowInputField = (d) => {
     setSelectedTabID(d.transaction_id);
     const selectedTransection =
@@ -83,21 +143,52 @@ const CashBook = () => {
   };
 
   //handle Search By SingleDate:
-  const handleSearchBySingleDate = () => {
+  const handleSearchBySingleDate = async () => {
+    setPaginationVisible(false);
     if (singleDate) {
-      const formattedSingleDate = new Date(singleDate)
-        .toISOString()
-        .split("T")[0];
-      const filteredItems = calculationItems.filter(
-        (item) => item.date.split("T")[0] === formattedSingleDate
-      );
-      if (filteredItems.length > 0) {
-        setItems(filteredItems);
-        setSingleDate("");
-        singleDateRef.current.value = "";
-      } else {
-        fetchData();
-        toast.error("No date found at this search!");
+      setCalculationVisible(true);
+      try {
+        setIsLoading(true);
+        const responseProduct = await axiosInstance.get(
+          `/transactionsRouter/getTransactionProductWithouOperationTypeOnlyDate?date=${singleDate}`
+        );
+        if (responseProduct.data.length > 0) {
+          const filteredInAmountData = Object.values(
+            responseProduct.data.reduce((acc, curr) => {
+              if (!acc[curr.invoice_no] && curr.operation_type_id === 1) {
+                acc[curr.invoice_no] = curr;
+              }
+              return acc;
+            }, {})
+          );
+          const filteredOutData = Object.values(
+            responseProduct.data.reduce((acc, curr) => {
+              if (!acc[curr.invoice_no] && curr.operation_type_id === 2) {
+                acc[curr.invoice_no] = curr;
+              }
+              return acc;
+            }, {})
+          );
+          const expenseData = responseProduct.data.filter(
+            (acc) => acc.operation_type_id === 3
+          );
+          const filteredData = [
+            ...filteredInAmountData,
+            ...filteredOutData,
+            ...expenseData,
+          ];
+          setItems(filteredData);
+          setData(responseProduct.data);
+          singleDateRef.current.value = "";
+          setIsLoading(false);
+        } else {
+          setItems([]);
+          toast.error("No date found at this search!");
+          setIsLoading(false);
+        }
+      } catch (e) {
+        console.log(e);
+        setIsLoading(false);
       }
     } else {
       toast.error("Please pick a date to search");
@@ -106,26 +197,54 @@ const CashBook = () => {
 
   //handle FromToDateSearch============:
   // Handle search by date range
-  const handleSearchByDateRange = () => {
+
+  const handleSearchByDateRange = async () => {
+    setPaginationVisible(false);
     if (fromDate && toDate) {
-      const formattedFromDate = new Date(fromDate).toISOString().split("T")[0];
-      const formattedToDate = new Date(toDate).toISOString().split("T")[0];
+      setCalculationVisible(true);
+      try {
+        setIsLoading(true);
+        const responseProduct = await axiosInstance.get(
+          `transactionsRouter/getTransactionProductWithouOperationTypeFromDateToDate?startDate=${fromDate}&endDate=${toDate}`
+        );
+        if (responseProduct.data.length > 0) {
+          const filteredInAmountData = Object.values(
+            responseProduct.data.reduce((acc, curr) => {
+              if (!acc[curr.invoice_no] && curr.operation_type_id === 1) {
+                acc[curr.invoice_no] = curr;
+              }
+              return acc;
+            }, {})
+          );
+          const filteredOutData = Object.values(
+            responseProduct.data.reduce((acc, curr) => {
+              if (!acc[curr.invoice_no] && curr.operation_type_id === 2) {
+                acc[curr.invoice_no] = curr;
+              }
+              return acc;
+            }, {})
+          );
+          const expenseData = responseProduct.data.filter(
+            (acc) => acc.operation_type_id === 3
+          );
 
-      const filteredItems = calculationItems.filter((item) => {
-        const itemDate = item.date.split("T")[0];
-        return itemDate >= formattedFromDate && itemDate <= formattedToDate;
-      });
-
-      if (filteredItems.length > 0) {
-        setItems(filteredItems);
-
-        setFromDate("");
-        fromDateRef.current.value = "";
-        setToDate("");
-        toDateRef.current.value = "";
-      } else {
-        fetchData();
-        toast.error("No items found for this date range!");
+          const filteredData = [
+            ...filteredInAmountData,
+            ...filteredOutData,
+            ...expenseData,
+          ];
+          setItems(filteredData);
+          setData(responseProduct.data);
+          singleDateRef.current.value = "";
+          setIsLoading(false);
+        } else {
+          setItems([]);
+          toast.error("No date found at this search!");
+          setIsLoading(false);
+        }
+      } catch (e) {
+        console.log(e);
+        setIsLoading(false);
       }
     } else {
       toast.error("Please select both from and to dates!");
@@ -134,50 +253,157 @@ const CashBook = () => {
 
   //handleShowAll:
   const handleShowAll = () => {
-    fetchData();
+    fetchData(1);
+    setPage(1);
+    fetchIncomeExpense();
     setSingleDate("");
     setToDate("");
     setFromDate("");
+    setCalculationVisible(false);
+    setPaginationVisible(true);
   };
 
-  //========amountCalculation===:
+  const [inAmountData, setInAmountData] = useState([]);
+  const [outAmountData, setOutAmountData] = useState([]);
+
   useEffect(() => {
-    const handleCalculation = () => {
-      if (calculationItems && calculationItems.length > 0) {
-        // Calculate the total In amount
-        const filteredInItems = calculationItems.filter(
-          (item) => item.operation_type_id === 1
+    if (!data) return;
+
+    const filteredInItems = data.filter((item) => item.operation_type_id === 1);
+    const filteredOutItems = data.filter(
+      (item) => item.operation_type_id === 2
+    );
+
+    const formattedInTransactions =
+      filteredInItems &&
+      filteredInItems.reduce((acc, transaction) => {
+        const invoiceNo = transaction.invoice_no;
+        const existingIndex = acc.findIndex(
+          (item) => item.invoice_no === invoiceNo
         );
-        const InAmount = filteredInItems.reduce(
+
+        if (existingIndex !== -1) {
+          acc[existingIndex].InAmount += calculateInAmount(transaction);
+        } else {
+          acc.push({
+            invoice_no: invoiceNo,
+            InAmount: calculateInAmount(transaction),
+          });
+        }
+        return acc;
+      }, []);
+
+    const formattedOutTransactions =
+      filteredOutItems &&
+      filteredOutItems.reduce((acc, transaction) => {
+        const invoiceNo = transaction.invoice_no;
+        const existingIndex = acc.findIndex(
+          (item) => item.invoice_no === invoiceNo
+        );
+
+        if (existingIndex !== -1) {
+          acc[existingIndex].OutAmount += calculateOutAmount(transaction);
+        } else {
+          acc.push({
+            invoice_no: invoiceNo,
+            OutAmount: calculateOutAmount(transaction),
+          });
+        }
+        return acc;
+      }, []);
+
+    setInAmountData(formattedInTransactions);
+    setOutAmountData(formattedOutTransactions);
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data]);
+
+  // Helper function to calculate InAmount for a transaction
+  const calculateInAmount = useCallback((transaction) => {
+    const itemAmount =
+      parseFloat(transaction.sale_price || 0) *
+      parseFloat(transaction.quantity_no || 0);
+    const discount =
+      transaction.discount > 0
+        ? ((itemAmount * parseFloat(transaction.discount)) / 100).toFixed(2)
+        : 0;
+    return itemAmount - discount + (parseFloat(transaction.other_cost) || 0);
+  }, []);
+
+  // Helper function to calculate OutAmount for a transaction
+  const calculateOutAmount = (transaction) => {
+    const itemAmount =
+      parseFloat(transaction.quantity_no) *
+      parseFloat(transaction.purchase_price);
+    const discount =
+      transaction.discount > 0
+        ? ((itemAmount * parseFloat(transaction.discount)) / 100).toFixed(2)
+        : 0;
+    return itemAmount - discount;
+  };
+  //========amountCalculation===:
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const handleCalculation = useCallback(() => {
+    if (data && data.length > 0) {
+      // Calculate the total In amount
+
+      const InAmount = inAmountData.reduce(
+        (total, item) => total + parseFloat(item.InAmount),
+        0
+      );
+      setInAmount(InAmount);
+      // Calculate the total Out amount
+      const filteredOutItems = data.filter(
+        // eslint-disable-next-line eqeqeq
+        (item) => item.operation_type_id === 3
+      );
+
+      const outAmountPurchase =
+        outAmountData && outAmountData.length > 0
+          ? outAmountData
+              .reduce((productamount, item) => {
+                if (
+                  item.OutAmount !== undefined &&
+                  item.OutAmount !== null &&
+                  item.OutAmount !== ""
+                ) {
+                  productamount += Number(item.OutAmount);
+                }
+                return productamount;
+              }, 0)
+              .toFixed(2)
+          : 0;
+      const Expense =
+        filteredOutItems &&
+        filteredOutItems.reduce(
           (total, item) => total + parseFloat(item.amount),
           0
         );
-        setInAmount(InAmount);
-        // Calculate the total Out amount
-        const filteredOutItems = calculationItems.filter(
-          // eslint-disable-next-line eqeqeq
-          (item) => item.operation_type_id != 1
-        );
-        const OutAmount = filteredOutItems.reduce(
-          (total, item) => total + parseFloat(item.amount),
-          0
-        );
-        setOutAmount(OutAmount);
-        const totalCash = InAmount - OutAmount;
-        setTotalCash(totalCash);
-      }
-    };
-    handleCalculation();
-  }, [calculationItems]);
+      const TotalOutAmount = Expense + parseFloat(outAmountPurchase);
+      setOutAmount(TotalOutAmount);
+      const totalCash = InAmount - TotalOutAmount;
+      setTotalCash(outAmountPurchase >= 0 ? totalCash.toFixed(2) : 0);
+      setIsLoading(outAmountPurchase >= 0 ? false : true);
+    }
+  });
+  useEffect(() => {
+    console.log(isLoading);
+    if (CalculationVisible) {
+      handleCalculation();
+    }
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inAmountData, outAmountData]);
 
   // =========handleXlDownload==========
-  const handleXlDownload = () => {
-    const data = items;
-    const fileName = "cashbook_excel_data";
-    const exportType = exportFromJSON.types.csv;
+  // const handleXlDownload = () => {
+  //   const data = items;
+  //   const fileName = "cashbook_excel_data";
+  //   const exportType = exportFromJSON.types.csv;
 
-    exportFromJSON({ data, fileName, exportType });
-  };
+  //   exportFromJSON({ data, fileName, exportType });
+  // };
   //modal functionality:
   // eslint-disable-next-line no-unused-vars
   const showModal = () => {
@@ -188,6 +414,98 @@ const CashBook = () => {
   };
   const handleCancel = () => {
     setIsModalOpen(false);
+  };
+
+  const handleOperation = (d) => {
+    if (d.operation_type_id === 1) {
+      return "Sale";
+    }
+    if (d.operation_type_id === 2) {
+      return "Purchase";
+    }
+    if (d.operation_type_id === 3) {
+      return "Expense";
+    }
+  };
+  const handlePageChange = (newPage) => {
+    // Scroll to the top of the page with smooth behavior
+    window.scrollTo({ top: 0, behavior: "smooth" });
+
+    // Set the new current page
+    setPage(newPage);
+    fetchData(newPage);
+    // Fetch and update the content based on the new page
+    // fetchContent(newPage);
+  };
+
+  const renderPaginationButtons = () => {
+    const buttons = [];
+    buttons.push(
+      <button
+        className="arrow"
+        key="prev"
+        onClick={(e) => {
+          e.preventDefault();
+          handlePageChange(page - 1);
+        }}
+        disabled={page === 1}
+      >
+        <IoIosArrowBack />
+      </button>
+    );
+
+    // Display ellipsis before current page and after current page
+    const displayEllipsis = (start, end) => {
+      for (let i = start; i <= end; i++) {
+        buttons.push(
+          <button
+            key={i}
+            onClick={() => handlePageChange(i)}
+            className={page === i ? "active" : ""}
+          >
+            {i}
+          </button>
+        );
+      }
+    };
+
+    if (Totalpage <= 7) {
+      // If total pages are 7 or less, display all pages
+      displayEllipsis(1, Totalpage);
+    } else {
+      // Display pages based on current page
+      if (page <= 4) {
+        displayEllipsis(1, 5);
+        buttons.push(<span key="ellipsis1">... </span>);
+        displayEllipsis(Totalpage - 1, Totalpage);
+      } else if (page >= Totalpage - 3) {
+        displayEllipsis(1, 2);
+        buttons.push(<span key="ellipsis2">... </span>);
+        displayEllipsis(Totalpage - 4, Totalpage);
+      } else {
+        displayEllipsis(1, 2);
+        buttons.push(<span key="ellipsis3">... </span>);
+        displayEllipsis(page - 1, page + 1);
+        buttons.push(<span key="ellipsis4">... </span>);
+        displayEllipsis(Totalpage - 1, Totalpage);
+      }
+    }
+
+    buttons.push(
+      <button
+        className="arrow"
+        key="next"
+        onClick={(e) => {
+          e.preventDefault();
+          handlePageChange(page + 1);
+        }}
+        disabled={page === Totalpage}
+      >
+        <IoIosArrowForward />
+      </button>
+    );
+
+    return buttons;
   };
   return (
     <div className={style.cash_Holder}>
@@ -278,82 +596,125 @@ const CashBook = () => {
               <button className={style.showAll_button} onClick={handleShowAll}>
                 <MdOutlineViewCozy className="viewAllIcon" />
               </button>
-              <p className="buttonText">Show All</p>
+              <p className="buttonTextCash">Show All</p>
             </div>
           </div>
         </div>
         {/* /==========/main ============== */}
 
         <div className={`${style.cash_main} ${style.card}`}>
-          <div className={style.cash_tableDiv}>
-            <table className={style.cash_table}>
-              <thead className={style.cash_table_thead}>
-                <tr className={style.cash_table_head_tr}>
-                  <th className={style.cash_table_head_th}>Serial</th>
-                  <th className={style.cash_table_head_th}>Type</th>
-                  <th className={style.cash_table_head_th}>Invoice No</th>
-                  <th className={style.cash_table_head_th}>ID</th>
-                  <th className={style.cash_table_head_th}>Comment</th>
-                  <th className={style.cash_table_head_th}>Date</th>
-                  <th className={style.cash_table_head_th}>In Amount</th>
-                  <th className={style.cash_table_head_th}>Out Amount</th>
-                </tr>
-              </thead>
-              <tbody className={style.cash_table_Body}>
-                {items &&
-                  items.length > 0 &&
-                  items.map((d, index) => {
-                    return (
-                      <tr
-                        key={d.transaction_id}
-                        className={`
+          <div
+            className={`${isLoading ? "loader_spriner" : ""} ${
+              style.cash_tableDiv
+            }`}
+          >
+            {isLoading ? (
+              <RotatingLines
+                strokeColor="grey"
+                strokeWidth="5"
+                animationDuration="0.75"
+                width="64"
+                visible={true}
+              />
+            ) : (
+              <table className={style.cash_table}>
+                <thead className={style.cash_table_thead}>
+                  <tr className={style.cash_table_head_tr}>
+                    <th className={style.cash_table_head_th}>Serial</th>
+                    <th className={style.cash_table_head_th}>Type</th>
+                    <th className={style.cash_table_head_th}>Invoice No</th>
+                    <th className={style.cash_table_head_th}>ID</th>
+                    <th className={style.cash_table_head_th}>Comment</th>
+                    <th className={style.cash_table_head_th}>Date</th>
+                    <th className={style.cash_table_head_th}>In Amount</th>
+                    <th className={style.cash_table_head_th}>Out Amount</th>
+                  </tr>
+                </thead>
+                <tbody className={style.cash_table_Body}>
+                  {items &&
+                    items.length > 0 &&
+                    items.map((d, index) => {
+                      return (
+                        <tr
+                          key={d.transaction_id}
+                          className={`
     ${
       selectedTabID === d.transaction_id
         ? `${style.cash_tr} ${style.tab_selected}`
         : style.cash_tr
     }
   `}
-                        onClick={() => handleClickTableDataShowInputField(d)}
-                        tabIndex="0"
-                      >
-                        <td className={style.cash_table_Body_td}>{index}</td>
+                          onClick={() => handleClickTableDataShowInputField(d)}
+                          tabIndex="0"
+                        >
+                          <td className={style.cash_table_Body_td}>{index}</td>
 
-                        <td className={style.cash_table_Body_td}>
-                          {d.OperationType?.operation_name}
-                        </td>
-                        <td className={style.cash_table_Body_td}>
-                          {d.invoice_no}
-                        </td>
-                        <td className={style.cash_table_Body_td}>
-                          {d.transaction_id}
-                        </td>
-                        <td className={style.cash_table_Body_td}>
-                          {d.comment ? d.comment : ""}
-                        </td>
-                        <td className={style.cash_table_Body_td}>
-                          {formatDate(d.date)}
-                        </td>
-                        <td
-                          className={style.cash_table_Body_td}
-                          style={{ backgroundColor: "lightGreen" }}
-                        >
-                          {d.operation_type_id === 1 ? d.amount : 0}
-                        </td>
-                        <td
-                          className={style.cash_table_Body_td}
-                          style={{ backgroundColor: "#B7CDC2" }}
-                        >
-                          {d.operation_type_id !== 1 ? d.amount : 0}
-                        </td>
-                      </tr>
-                    );
-                  })}
-              </tbody>
-            </table>
+                          <td className={style.cash_table_Body_td}>
+                            {handleOperation(d)}
+                          </td>
+                          <td className={style.cash_table_Body_td}>
+                            {d.invoice_no}
+                          </td>
+                          <td className={style.cash_table_Body_td}>
+                            {d.transaction_id}
+                          </td>
+                          <td className={style.cash_table_Body_td}>
+                            {d.comment ? d.comment : ""}
+                          </td>
+                          <td className={style.cash_table_Body_td}>
+                            {formatDate(d.date)}
+                          </td>
+                          <td
+                            className={`${style.cash_table_Body_td} ${style.inAmount}`}
+                          >
+                            {d.operation_type_id === 1
+                              ? inAmountData
+                                  .filter(
+                                    (saleAmount) =>
+                                      saleAmount.invoice_no === d.invoice_no
+                                  )
+                                  .map((saleAmount) => (
+                                    <span key={saleAmount.id}>
+                                      {saleAmount.InAmount.toFixed(2)}
+                                    </span>
+                                  ))
+                              : 0}
+                          </td>
+                          <td
+                            className={`${style.cash_table_Body_td} ${style.outAmount}`}
+                          >
+                            {d.operation_type_id !== 1
+                              ? d.operation_type_id === 2
+                                ? outAmountData
+                                    .filter(
+                                      (saleAmount) =>
+                                        saleAmount.invoice_no === d.invoice_no
+                                    )
+                                    .map((saleAmount) => (
+                                      <span key={saleAmount.id}>
+                                        {saleAmount.OutAmount.toFixed(2)}
+                                      </span>
+                                    ))
+                                : d.amount
+                              : 0}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                </tbody>
+              </table>
+            )}
           </div>
+          {paginationVisible && (
+            <div
+              style={{ justifyContent: "flex-end" }}
+              className="pagination-buttons"
+            >
+              {renderPaginationButtons()}
+            </div>
+          )}
         </div>
         {/* /==========/Footer ============== */}
-
         <div className={`${style.cash_Footer} ${style.card}`}>
           <div className={style.totalDiv}>
             <div className={style.Amount}>
@@ -408,17 +769,7 @@ const CashBook = () => {
             </div>
           </div>
           <div className={style.excelExportDiv}>
-            <div className={style.excelExportBtnDiv}>
-              <div className={style.divForALlbutton}>
-                <button
-                  className={style.excelExportBtn}
-                  onClick={handleXlDownload}
-                >
-                  <BsFillFileEarmarkExcelFill className={style.xlIcon} />{" "}
-                </button>
-                <p className={style.buttonText}>Excel Report</p>
-              </div>
-            </div>
+            <ExcelExport excelData={items} fileName={"CashBookData"} />
           </div>
         </div>
       </div>

@@ -2,13 +2,6 @@ import React, { useEffect, useState } from "react";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import "./piChartBox.css";
 import { useTheme } from "../context/ThemeContext";
-// const data = [
-//   { name: "Atta", value: 55, color: "#DD4F4F" },
-//   { name: "Milk", value: 49, color: "#F39C12" },
-//   { name: "Vegetables", value: 44, color: "#0088FE" },
-//   { name: "Fruit", value: 24, color: "#9B59B6" },
-//   { name: "Sugar", value: 15, color: "#008080" },
-// ];
 
 const PieChartBox = ({ data }) => {
   const [theme] = useTheme();
@@ -46,7 +39,7 @@ const PieChartBox = ({ data }) => {
       setRerenderChart(!rerenderChart);
     };
     handleReloadChart();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [theme]);
 
   return (
@@ -61,7 +54,7 @@ const PieChartBox = ({ data }) => {
           marginBottom: "2vh",
         }}
       >
-        Monthly Top 10 Sale Products
+        Current Month Top Sale Products
       </h1>
       <div className="Pi_charts">
         <ResponsiveContainer width="99%" height={200}>
@@ -84,23 +77,23 @@ const PieChartBox = ({ data }) => {
               dataKey="value"
               label={renderCustomizedLabel}
             >
-              {data && data.map((item) => (
-                <Cell key={item.name} fill={item.color} />
-              ))}
+              {data &&
+                data.map((item) => <Cell key={item.name} fill={item.color} />)}
             </Pie>
           </PieChart>
         </ResponsiveContainer>
       </div>
       <div className="options">
-        {data && data.map((item) => (
-          <div className="option" key={item.name}>
-            <div className="title">
-              <div className="dot" style={{ backgroundColor: item.color }} />
-              <span>{item.name}</span>
+        {data &&
+          data.map((item) => (
+            <div className="option" key={item.name}>
+              <div className="title">
+                <div className="dot" style={{ backgroundColor: item.color }} />
+                <span>{item.name}</span>
+              </div>
+              <span>{item.value}</span>
             </div>
-            <span>{item.value}</span>
-          </div>
-        ))}
+          ))}
       </div>
     </div>
   );
