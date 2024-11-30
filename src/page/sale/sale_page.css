@@ -262,15 +262,15 @@
 
 /* Extra Code End*/
 .container_table_supershop_sale input {
-  width: 13.1vw;
+  width: 11.8vw;
   height: 3vh;
   border: none;
+  font-size: 14px;
   /* background-color: #fcfcfc; */
   padding-left: 0.3vw;
 
-  /* box-shadow: 0 0px 0px 1px rgba(145, 141, 141, 0.5);
-    text-shadow: 2px 7px 5px rgba(0, 0, 0, 0.3),
-      0px -4px 10px rgba(255, 255, 255, 0.3); */
+  text-shadow: 2px 7px 5px rgba(0, 0, 0, 0.3),
+    0px -4px 10px rgba(255, 255, 255, 0.3);
 }
 
 .separator-button button:active {
@@ -365,15 +365,17 @@
   font-weight: bold;
   margin-bottom: 1vh;
 }
-.save-and-delete-button-customer{
+.save-and-delete-button-customer {
   display: flex;
   column-gap: 25px;
 }
 .input_field_bottom_supershop_sale input {
   box-shadow: 0 0px 0px 1px rgba(145, 141, 141, 0.5);
   border-radius: 3px;
-  font-size: 0.9vw;
+  font-size: 14px;
   padding-left: 0.3vw;
+  text-shadow: 2px 7px 5px rgba(0, 0, 0, 0.3),
+    0px -4px 10px rgba(255, 255, 255, 0.3);
   background-color: #ffffff;
   width: 10vw;
   height: 3.2vh;
@@ -425,10 +427,10 @@
   animation-fill-mode: forwards;
   visibility: hidden;
 }
-.vat_select_field{
+.vat_select_field {
   width: 4.1vw !important;
 }
-.vat_amount_sale_page{
+.vat_amount_sale_page {
   width: 5vw !important;
 }
 .container_input_field_box_supershop_sale {

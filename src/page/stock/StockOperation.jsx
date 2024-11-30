@@ -121,7 +121,7 @@ const StockOperation = () => {
   }, []);
 
   useEffect(() => {
-    if (purchaseData.length > 0 && saleData.length > 0) {
+    if (purchaseData.length > 0 || saleData.length > 0) {
       const formattedStock = AvailableQuantity(saleData, purchaseData);
       setFilteredData(formattedStock);
 
@@ -261,6 +261,7 @@ const StockOperation = () => {
         `/transactionsRouter/getTransactionProductCode?operation_type_id=2&product_code=${selectedProductCode}`
       );
       if (responseSale.status === 200 && responseQunatity.status === 200) {
+        console.log("dfsdf",responseQunatity,responseSale)
         const responseSaleData = responseSale.data;
         const responseQunatityData = responseQunatity.data;
         setSaleData(responseSaleData);

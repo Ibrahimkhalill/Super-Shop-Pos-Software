@@ -105,7 +105,7 @@
   font-size: 1vw;
   background-color: #ffffff;
   width: 15vw;
-  height: 3.2vh;
+  height: 4vh;
   color: #000;
   text-shadow: 2px 7px 5px rgba(0, 0, 0, 0.3),
     0px -4px 10px rgba(255, 255, 255, 0.3);
@@ -114,6 +114,7 @@
   animation-name: fadeIn;
   animation-fill-mode: forwards;
   visibility: hidden;
+  outline: none;
 }
 
 .login-button {

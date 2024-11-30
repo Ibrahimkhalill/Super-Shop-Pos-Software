@@ -593,12 +593,19 @@ button {
   background-color: rgba(136, 179, 154, 1);
   overflow-y: scroll;
 }
+input[type="checkbox"] {
+  transform: scale(1.2); /* Adjust the scale factor to increase the size */
+  -webkit-transform: scale(1.2); /* For Safari compatibility */
+  
+}
+
 
 .barcode_check_box_purchase {
-  margin-left: 0.7vw;
+  margin-left: 1.6vw;
   font-size: 1vw;
   display: flex;
   align-items: center;
+  gap: 6px;
 }
 
 .table_supershop_purchase {

@@ -113,18 +113,9 @@ const Addproducts = () => {
   //==========get all products product=============:
   const fetchAllProducts = async () => {
     try {
-      const productData = sessionStorage.getItem("productData");
-      if (productData) {
-        setItems(JSON.parse(productData));
-        setFixedItems(JSON.parse(productData));
-      } else {
-        const response = await axiosInstance.get("/producttraces/getAll");
-        setItems(response.data);
-        setFixedItems(response.data);
-        sessionStorage.setItem("productData", JSON.stringify(response.data));
-        console.log(response.data);
-      }
-      sessionStorage.removeItem("productData");
+      const response = await axiosInstance.get("/producttraces/getAll");
+      setItems(response.data);
+      setFixedItems(response.data);
     } catch (error) {
       console.error("Error fetching or storing productTrace Data :", error);
     }
@@ -705,31 +696,61 @@ const Addproducts = () => {
     }
   };
 
-  //handleProductSearch
-  const handleProductSearch = (value) => {
-    setProductSearchCode(value);
-    if (value) {
-      const filteredProduct = fixedItems.filter((item) =>
-        item.name.toLowerCase().includes(value.toLowerCase())
-      );
+  const handleShowAll = () => {
+    setFixedItems(items);
+    resetAll();
+  };
 
-      setItems(filteredProduct);
+  //handleProductSearch
+  const handleProductSearch = () => {
+    const filteredProduct = items.filter(
+      (item) => item.product_code.toString() === productSearchCode.toString()
+    );
+
+    // Update the displayed items based on the search
+    if (filteredProduct.length > 0) {
+      setFixedItems(filteredProduct);
       setProductSearchStatus(true);
+      setProductSearchEmpty(false); // Reset empty status
     } else {
-      setItems(fixedItems);
-      setProductSearchEmpty(true);
-      setTimeout(() => {
-        setProductSearchEmpty(false);
-      }, 2600);
+      // Handle case where no products are found
+      setFixedItems([]); // Clear items or display a message
+      setProductSearchStatus(false);
+      setProductSearchEmpty(true); // Indicate that no products were found
     }
   };
 
+  // Check if items are correctly populated
+
+  // Check if items are correctly populated
+  // useEffect(() => {
+  //   // When productSearchCode changes
+  //   if (productSearchCode) {
+  //     // Filter the items based on product code
+  //     const filteredProduct = fixedItems.filter(
+  //       (item) => item.product_code.toString() === productSearchCode.toString()
+  //     );
+
+  //     // Update the displayed items based on the search
+  //     if (filteredProduct.length > 0) {
+  //       setItems(filteredProduct);
+  //       setProductSearchStatus(true);
+  //       setProductSearchEmpty(false); // Reset empty status
+  //     } else {
+  //       // Handle case where no products are found
+  //       setItems([]); // Clear items or display a message
+  //       setProductSearchStatus(false);
+  //       setProductSearchEmpty(true); // Indicate that no products were found
+  //     }
+  //   } else {
+  //     // Reset the item list if the search input is cleared
+  //     setItems(fixedItems); // Reset to original items
+  //     setProductSearchEmpty(true);
+  //   }
+  // }, [productSearchCode]);
+
   // handleCleareProductSearch
-  const handleCleareProductSearch = () => {
-    setProductSearchCode("");
-    fetchAllProducts();
-    setProductSearchStatus(false);
-  };
+
   //==================reset functionality==================================:
   const resetCategory = () => {
     setCategoryId("");
@@ -795,6 +816,7 @@ const Addproducts = () => {
     resetProduct();
     resetBarcode();
     setSalePrice("");
+    setProductSearchCode("");
   };
   //==========barcode print functionality========:
   const componentRef = useRef();
@@ -935,7 +957,7 @@ const Addproducts = () => {
                     className={`${styles.sanity_icon} ${styles.refresh}`}
                     onClick={() => resetCategory()}
                   >
-                    <IoReloadCircleOutline />{" "}
+                    <IoReloadCircleOutline />
                   </button>
                   <button
                     className={`${styles.sanity_icon} ${styles.add}`}
@@ -956,7 +978,7 @@ const Addproducts = () => {
                       }
                     }}
                   >
-                    <RiDeleteBin6Line />{" "}
+                    <RiDeleteBin6Line />
                   </button>
                 </div>
               </div>
@@ -979,7 +1001,11 @@ const Addproducts = () => {
                     {racks &&
                       racks.length > 0 &&
                       racks.map((r) => (
-                        <option className="category_option" value={r.rack_id}>
+                        <option
+                          className="category_option"
+                          key={r.rack_id}
+                          value={r.rack_id}
+                        >
                           {r.rack_no}
                         </option>
                       ))}
@@ -1024,7 +1050,7 @@ const Addproducts = () => {
                     className={`${styles.sanity_icon} ${styles.refresh}`}
                     onClick={() => resetRack()}
                   >
-                    <IoReloadCircleOutline />{" "}
+                    <IoReloadCircleOutline />
                   </button>
                   <button
                     className={`${styles.sanity_icon} ${styles.add}`}
@@ -1043,7 +1069,7 @@ const Addproducts = () => {
                       }
                     }}
                   >
-                    <RiDeleteBin6Line />{" "}
+                    <RiDeleteBin6Line />
                   </button>
                 </div>
               </div>
@@ -1072,18 +1098,35 @@ const Addproducts = () => {
                           : `${styles.search_input} `
                       }
                       value={productSearchCode}
-                      onChange={(e) => handleProductSearch(e.target.value)}
+                      onChange={(e) => setProductSearchCode(e.target.value)}
                       placeholder="Search product"
                       list="allProducts"
                       ref={productSearchCodeRef}
                     />
                     <datalist id="allProducts">
                       {items.map((product) => (
-                        <option key={product.product_code} value={product.name}>
+                        <option
+                          key={product.product_trace_id}
+                          value={product.product_code}
+                        >
                           {product.name}
                         </option>
                       ))}
                     </datalist>
+                  </div>
+                  <div>
+                    <button
+                      className={`${styles.searchBtn}`}
+                      onClick={handleProductSearch}
+                    >
+                      Search
+                    </button>
+                    <button
+                      className={`${styles.searchBtn}`}
+                      onClick={handleShowAll}
+                    >
+                      Show All
+                    </button>
                   </div>
                 </div>
 
@@ -1092,8 +1135,7 @@ const Addproducts = () => {
                     <thead>
                       <tr className={styles.heading_row}>
                         <th>
-                          {" "}
-                          <div className={styles.t_data}>Code</div>{" "}
+                          <div className={styles.t_data}>Code</div>
                         </th>
                         <th>
                           <div className={styles.t_data}>Name</div>
@@ -1114,10 +1156,11 @@ const Addproducts = () => {
                     </thead>
 
                     <tbody className={styles.tbody}>
-                      {items &&
-                        items.length > 0 &&
-                        items.map((d) => (
+                      {fixedItems &&
+                        fixedItems.length > 0 &&
+                        fixedItems.map((d) => (
                           <tr
+                            style={{ cursor: "pointer" }}
                             key={d.product_trace_id}
                             className={`
           ${
@@ -1287,7 +1330,6 @@ const Addproducts = () => {
                       />
                     </div>
                     <div className={styles.right_div}>
-                      {" "}
                       <label htmlFor="code" className={styles.pLabel}>
                         Model:
                       </label>
@@ -1381,7 +1423,7 @@ const Addproducts = () => {
                         className={`${styles.sanity_icon} ${styles.refresh} ${styles.refresh2}`}
                         onClick={() => resetAll()}
                       >
-                        <IoReloadCircleOutline />{" "}
+                        <IoReloadCircleOutline />
                       </button>
                       <button
                         className={`${styles.sanity_icon} ${styles.save}`}
@@ -1403,7 +1445,7 @@ const Addproducts = () => {
                           }
                         }}
                       >
-                        <RiDeleteBin6Line />{" "}
+                        <RiDeleteBin6Line />
                       </button>
                     </div>
                   </div>
@@ -1441,6 +1483,7 @@ const Addproducts = () => {
                   type="text"
                   className={styles.amountInput}
                   value={barcodeProductName}
+                  onChange={(e) => setBarcodeProductName(e.target.value)}
                 />
               </div>
             </div>

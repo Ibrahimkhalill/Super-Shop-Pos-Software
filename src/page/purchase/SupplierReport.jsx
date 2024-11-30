@@ -65,7 +65,6 @@ const PurchasesReport = () => {
       );
       const count = response_getPurchaseTranscatioData.data.count;
       setPurchaseTotalPage(Math.ceil(count / PurchasePageSize));
-      setIsLoading(false);
     } catch (error) {
       console.log(error.message);
     }
@@ -79,6 +78,7 @@ const PurchasesReport = () => {
       const filterSaleTransactions = response.data.rows;
       setRows((prevRows) => [...prevRows, ...filterSaleTransactions]);
       setPurchasePage((prevPage) => prevPage + 1);
+      setIsLoading(false);
     } catch (error) {
       console.log(error.message);
     }
@@ -343,8 +343,7 @@ const PurchasesReport = () => {
           item?.contributor_name.trim().toLocaleLowerCase() ===
           name.trim().toLocaleLowerCase()
       );
-      console.log(filter?.contributor_name_id);
-      setContributorNameId(filter?.contributor_name_id);
+      setContributorNameId(filter?.contributor_name_id || null);
     }
   };
 
@@ -632,46 +631,62 @@ const PurchasesReport = () => {
                   width="64"
                   visible={true}
                 />
+              ) : rows.length > 0 ? (
+                <div>
+                  <table border={1} cellSpacing={2} cellPadding={10}>
+                    <thead>
+                      <tr>
+                        <th style={Color}>Invoice</th>
+                        <th style={Color}>Supplier Name</th>
+                        <th style={Color}>Mobile</th>
+                        <th style={Color}>Address</th>
+                        <th style={Color}>Total</th>
+                        <th style={Color}>Paid</th>
+                        <th style={Color}>Due</th>
+                        <th style={Color}>Purchase Date</th>
+                        <th style={Color}>Entry by</th>
+                        <th style={Color}>Shop</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {formattedTransactions &&
+                        formattedTransactions.map((transaction, index) => (
+                          <tr
+                            key={index}
+                            className={
+                              activeRowIndex === index ? "active-row" : ""
+                            }
+                            onClick={() => handlerow(transaction, index)}
+                          >
+                            <td>{transaction.invoice_no}</td>
+                            <td>{transaction.contributor_name}</td>
+                            <td>{transaction.mobile}</td>
+                            <td>{transaction.address}</td>
+                            <td>{transaction.amount}</td>
+                            <td>{transaction.paid}</td>
+                            <td>{transaction.due}</td>
+                            <td>{transaction.date}</td>
+                            <td>{employee}</td>
+                            <td>{transaction.shop_name}</td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
               ) : (
-                <table border={3} cellSpacing={2} cellPadding={10}>
-                  <thead>
-                    <tr>
-                      <th style={Color}>Invoice</th>
-                      <th style={Color}>Supplier Name</th>
-                      <th style={Color}>Mobile</th>
-                      <th style={Color}>Address</th>
-                      <th style={Color}>Total</th>
-                      <th style={Color}>Paid</th>
-                      <th style={Color}>Due</th>
-                      <th style={Color}>Purchase Date</th>
-                      <th style={Color}>Entry by</th>
-                      <th style={Color}>Shop</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {formattedTransactions &&
-                      formattedTransactions.map((transaction, index) => (
-                        <tr
-                          key={index}
-                          className={
-                            activeRowIndex === index ? "active-row" : ""
-                          }
-                          onClick={() => handlerow(transaction, index)}
-                        >
-                          <td>{transaction.invoice_no}</td>
-                          <td>{transaction.contributor_name}</td>
-                          <td>{transaction.mobile}</td>
-                          <td>{transaction.address}</td>
-                          <td>{transaction.amount}</td>
-                          <td>{transaction.paid}</td>
-                          <td>{transaction.due}</td>
-                          <td>{transaction.date}</td>
-                          <td>{employee}</td>
-                          <td>{transaction.shop_name}</td>
-                        </tr>
-                      ))}
-                  </tbody>
-                </table>
+                <div className="not_found">
+                  <div>
+                    <img
+                      src="https://cdn-icons-png.flaticon.com/128/6146/6146689.png"
+                      alt=""
+                      width={70}
+                    />
+                  </div>
+                  Not found any machting data
+                  <p className="notFound_text">
+                    Instead, try searching this way
+                  </p>
+                </div>
               )}
             </div>
             <div className="total_supplier_report">

@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback } from "react";
 import "./sale_page.css";
 import { Button, Modal } from "antd";
 import { useState, useEffect, useRef } from "react";
@@ -9,7 +9,6 @@ import { useReactToPrint } from "react-to-print";
 import { PosInvoice } from "../../components/Pos.js";
 import { ToastContainer, toast } from "react-toastify";
 import axios from "axios";
-import AvailableQuantity from "../../components/stookquantity/AvilableQunatity";
 import Delete from "../../image/delete.png";
 import update from "../../image/Update.png";
 const SalePage = () => {
@@ -228,6 +227,7 @@ const SalePage = () => {
     product_type: "",
     sale_price: "",
     quantity: "",
+    stock: "",
     itemTotal: "",
     unit: "",
     product_trace_id: "",
@@ -246,10 +246,12 @@ const SalePage = () => {
     );
   };
   useEffect(() => {
-    // Focus on the first input field of the first row when the component mounts
-    if (inputRefs.current[0] && inputRefs.current[0][0]?.current) {
-      inputRefs.current[0][0].current.focus();
-    }
+    // Delay focus until the inputs are rendered
+    setTimeout(() => {
+      if (inputRefs.current[0] && inputRefs.current[0][0]) {
+        inputRefs.current[0][0].focus(); // Directly focus without .current as inputRefs stores the element
+      }
+    }, 0); // Zero delay to wait for next event loop cycle
   }, []);
   // Call addRowRefs function whenever you need to add a new row
   addRowRefs();
@@ -273,6 +275,7 @@ const SalePage = () => {
             product_type: "",
             sale_price: "",
             quantity: "",
+            stock: "",
             itemTotal: "",
             unit: "",
             product_trace_id: "",
@@ -284,19 +287,19 @@ const SalePage = () => {
         // Focus on the first input field of the newly added row
         setTimeout(() => {
           const nextRowIndex = rowIndex + 1;
-          const nextRowInputField = inputRefs.current[nextRowIndex][0].current;
+          const nextRowInputField = inputRefs.current[nextRowIndex][0];
           if (nextRowInputField) {
             nextRowInputField.focus(); // Focus on the input field of the next row
           }
-        });
+        },200  );
       } else if (colIndex < 6) {
         // Move focus to the next input field in the same row
         setTimeout(() => {
           if (
             inputRefs.current[rowIndex] &&
-            inputRefs.current[rowIndex][colIndex + 1]?.current
+            inputRefs.current[rowIndex][colIndex + 1]
           ) {
-            inputRefs.current[rowIndex][colIndex + 1].current.focus();
+            inputRefs.current[rowIndex][colIndex + 1].focus();
           }
         });
       }
@@ -334,8 +337,10 @@ const SalePage = () => {
       case 4:
         return "quantity";
       case 5:
-        return "itemTotal";
+        return "stock";
       case 6:
+        return "itemTotal";
+      case 7:
         return "unit";
       default:
         return "";
@@ -417,6 +422,7 @@ const SalePage = () => {
         product_type: "",
         sale_price: "",
         quantity: "",
+        stock: "",
         itemTotal: "",
         unit: "",
         product_trace_id: "",
@@ -664,6 +670,7 @@ const SalePage = () => {
       console.log("ok");
     }
   };
+
   // const due = parseFloat(netTotal) - parseFloat(pay) || 0;
   const HandleResetSupplier = () => {
     setContributorName("");
@@ -686,85 +693,96 @@ const SalePage = () => {
     const updatedItems = [...items];
     const fieldName = getFieldName(colIndex);
 
+    // Update the field in the updatedItems array
     updatedItems[rowIndex][fieldName] = value;
 
     if (fieldName === "itemCode") {
-      const matchedProduct = [...data]
-        .reverse()
+      // Find the matched product based on item code
+      const matchedProduct = data
+        .slice() // Create a copy to avoid modifying the original array
+        .sort((a, b) => new Date(b.date) - new Date(a.date)) // Sort by date, newest first
         .find(
           (product) =>
             product.ProductTrace && product.ProductTrace.product_code === value
         );
 
+      // Retrieve available quantity from formatted stock
+      const availableQuantity = formattedStock.find(
+        (data) => data.ProductCode == value
+      );
+
       if (matchedProduct) {
-        const SaleData =
-          data &&
-          data.filter(
-            (product) =>
-              product.ProductTrace &&
-              product.ProductTrace.product_code === value
-          );
-        setSalePriceData(SaleData);
+        // If a product is matched, update the relevant fields
+        updatedItems[rowIndex] = {
+          ...updatedItems[rowIndex], // Spread existing row data
+          product_name: matchedProduct.ProductTrace?.name,
+          product_type: matchedProduct.ProductTrace?.type,
+          sale_price: matchedProduct.sale_price,
+          purchase_price: matchedProduct.purchase_price,
+          unit: matchedProduct.Unit?.unit,
+          unit_id: matchedProduct.Unit?.unit_id,
+          product_trace_id: matchedProduct.ProductTrace?.product_trace_id,
+          quantity: 1, // Reset quantity to 1 or desired initial value
+          stock: availableQuantity?.availableQuantity || 0, // Set stock immediately
+        };
 
-        // Retrieve available quantity from formatted stock
-        const Aviablequantity = formattedStock.find(
-          (data) => data.ProductCode === updatedItems[rowIndex]["itemCode"]
+        // Retrieve available quantity and set state
+        setAvailable(availableQuantity);
+        const saleData = data.filter(
+          (product) =>
+            product.ProductTrace && product.ProductTrace.product_code === value
         );
+        setSalePriceData(saleData);
 
-        setAvailable(Aviablequantity);
-
-        // Update product details based on the matched product
-        // ...
-
-        updatedItems[rowIndex]["product_name"] =
-          matchedProduct.ProductTrace?.name;
-        updatedItems[rowIndex]["product_type"] =
-          matchedProduct.ProductTrace?.type;
-        updatedItems[rowIndex]["sale_price"] = matchedProduct.sale_price;
-        updatedItems[rowIndex]["purchase_price"] =
-          matchedProduct.purchase_price;
-        updatedItems[rowIndex]["unit"] = matchedProduct.Unit?.unit;
-        updatedItems[rowIndex]["unit_id"] = matchedProduct.Unit?.unit_id;
-        updatedItems[rowIndex]["product_trace_id"] =
-          matchedProduct.ProductTrace?.product_trace_id;
-        if (
-          inputRefs.current[rowIndex] &&
-          inputRefs.current[rowIndex][4]?.current
-        ) {
-          inputRefs.current[rowIndex][4].current.focus();
-        }
+        // Focus on the next input
+        setTimeout(() => {
+          if (inputRefs.current[rowIndex] && inputRefs.current[rowIndex][4]) {
+            inputRefs.current[rowIndex][4].focus();
+          }
+        }, 0); // Delay to ensure the DOM is updated before focusing
       } else {
-        updatedItems[rowIndex]["product_name"] = "";
-        updatedItems[rowIndex]["product_type"] = "";
-        updatedItems[rowIndex]["sale_price"] = "";
-        updatedItems[rowIndex]["unit"] = "";
-        updatedItems[rowIndex]["quantity"] = "";
-        updatedItems[rowIndex]["purchase_price"] = "";
+        // Reset fields if no matched product is found
+        updatedItems[rowIndex] = {
+          ...updatedItems[rowIndex],
+          product_name: "",
+          product_type: "",
+          sale_price: "",
+          unit: "",
+          quantity: "",
+          purchase_price: "",
+          stock: "",
+        };
         setpay("");
         setSalePriceData([]);
       }
     }
 
-    let salePrice = parseFloat(updatedItems[rowIndex]["sale_price"]);
-    let quantity = parseFloat(updatedItems[rowIndex]["quantity"]);
-
+    // Handle quantity changes
     if (fieldName === "quantity") {
-      // Parse entered quantity
       const enteredQuantity = parseFloat(value);
+      const stockQuantity = parseFloat(updatedItems[rowIndex]["stock"]);
 
-      if (enteredQuantity > parseFloat(available?.availableQuantity)) {
+      // Check if entered quantity exceeds available quantity
+      if (enteredQuantity > stockQuantity) {
         toast.dismiss();
         toast.warning(
           `The entered quantity exceeds the available quantity. ${available?.availableQuantity} ${available?.unit}`
         );
       }
     }
+
+    // Calculate item total
+    const salePrice = parseFloat(updatedItems[rowIndex]["sale_price"]);
+    const quantity = parseFloat(updatedItems[rowIndex]["quantity"]);
     updatedItems[rowIndex]["itemTotal"] =
       isNaN(salePrice) || isNaN(quantity)
         ? ""
         : Math.round(salePrice * quantity);
+
+    // Update the state with the modified items
     setItems(updatedItems);
   };
+
   return (
     <div className="full_div_super_shop_sale">
       <ToastContainer position="top-right" autoClose={2000} />
@@ -779,75 +797,86 @@ const SalePage = () => {
                 <th>Product Type</th>
                 <th>Sale Price*</th>
                 <th>Quantity*</th>
+                <th>Stock</th>
                 <th>Item Total*</th>
                 <th>Unit*</th>
               </tr>
             </thead>
             <tbody>
-              {items.map((item, rowIndex) => (
-                <tr key={rowIndex}>
-                  {Object.keys(item)
-                    .slice(0, 7)
-                    .map((fieldName, colIndex) => (
-                      <td key={colIndex}>
-                        <input
-                          type="text"
-                          className="table_input_field"
-                          ref={inputRefs.current[rowIndex][colIndex]}
-                          list={
-                            getFieldName(colIndex) === "itemCode"
-                              ? `item_codes_${rowIndex}`
-                              : getFieldName(colIndex) === "sale_price"
-                              ? `sale_price_${rowIndex}`
-                              : ""
-                          }
-                          value={item[fieldName]}
-                          readOnly={
-                            ![0, 3, 4].includes(colIndex) // Make fields read-only if not Barcode, Sale Price, or quantity
-                          }
-                          style={{
-                            backgroundColor: ![0, 4, 3].includes(colIndex)
-                              ? "white"
-                              : "", // Set background color to white for read-only fields
-                          }}
-                          //
-                          onChange={(e) => handleChange(e, rowIndex, colIndex)}
-                          onKeyDown={(e) =>
-                            handleKeyPress(e, rowIndex, colIndex)
-                          }
-                        />
-                        {fieldName === "sale_price" && (
-                          <datalist id={`sale_prices_${rowIndex}`}>
-                            {SaleData.map((product) => (
-                              <option
-                                key={product.product_trace_id}
-                                value={product.sale_price}
-                              />
-                            ))}
-                          </datalist>
-                        )}
-                        {fieldName === "itemCode" && (
-                          <datalist id={`item_codes_${rowIndex}`}>
-                            {/* Populate options with sale prices for the scanned product */}
-                            {data.length > 0 && (
-                              <>
-                                {[
-                                  ...new Set(
-                                    data.map(
-                                      (item) => item.ProductTrace?.product_code
-                                    )
-                                  ),
-                                ].map((productCode, index) => (
-                                  <option key={index}>{productCode}</option>
-                                ))}
-                              </>
-                            )}
-                          </datalist>
-                        )}
-                      </td>
-                    ))}
-                </tr>
-              ))}
+              {items.map((item, rowIndex) => {
+                if (!inputRefs.current[rowIndex]) {
+                  inputRefs.current[rowIndex] = [];
+                }
+                return (
+                  <tr key={rowIndex}>
+                    {Object.keys(item)
+                      .slice(0, 8)
+                      .map((fieldName, colIndex) => (
+                        <td key={colIndex}>
+                          <input
+                            type="text"
+                            className="table_input_field"
+                            ref={(el) =>
+                              (inputRefs.current[rowIndex][colIndex] = el)
+                            }
+                            list={
+                              getFieldName(colIndex) === "itemCode"
+                                ? `item_codes_${rowIndex}`
+                                : getFieldName(colIndex) === "sale_price"
+                                ? `sale_price_${rowIndex}`
+                                : ""
+                            }
+                            value={item[fieldName]}
+                            readOnly={
+                              ![0, 3, 4].includes(colIndex) // Make fields read-only if not Barcode, Sale Price, or quantity
+                            }
+                            style={{
+                              backgroundColor: ![0, 4, 3].includes(colIndex)
+                                ? "white"
+                                : "", // Set background color to white for read-only fields
+                            }}
+                            //
+                            onChange={(e) =>
+                              handleChange(e, rowIndex, colIndex)
+                            }
+                            onKeyDown={(e) =>
+                              handleKeyPress(e, rowIndex, colIndex)
+                            }
+                          />
+                          {fieldName === "sale_price" && (
+                            <datalist id={`sale_prices_${rowIndex}`}>
+                              {SaleData.map((product) => (
+                                <option
+                                  key={product.product_trace_id}
+                                  value={product.sale_price}
+                                />
+                              ))}
+                            </datalist>
+                          )}
+                          {fieldName === "itemCode" && (
+                            <datalist id={`item_codes_${rowIndex}`}>
+                              {/* Populate options with sale prices for the scanned product */}
+                              {data.length > 0 && (
+                                <>
+                                  {[
+                                    ...new Set(
+                                      data.map(
+                                        (item) =>
+                                          item.ProductTrace?.product_code
+                                      )
+                                    ),
+                                  ].map((productCode, index) => (
+                                    <option key={index}>{productCode}</option>
+                                  ))}
+                                </>
+                              )}
+                            </datalist>
+                          )}
+                        </td>
+                      ))}
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -1105,7 +1134,7 @@ const SalePage = () => {
       </div>
       <div className="popup-window_supershop">
         <Modal
-          title="Add Supplier"
+          title="Add Permanent  Customer"
           open={isModalOpen}
           onCancel={handleCancel}
           width={730}
@@ -1125,7 +1154,7 @@ const SalePage = () => {
                     <div className="search_permanent_supplier_supershop">
                       <div className="search_permanent_supplier_supershop_column1">
                         <div className="input_field_permanent_supplier_supershop">
-                          <label>Supplier Name*</label>
+                          <label>Customer Name*</label>
                           <input
                             type="text"
                             value={contributor_name}

@@ -29,6 +29,7 @@ const PurchaseOperation = () => {
   const [unit, setUnit] = useState("");
   const [warranty, setWarranty] = useState("");
   const [discount, setDiscount] = useState("");
+  const [discountPrice, setDiscountPrice] = useState("");
   const [todayDate, setTodayDate] = useState(() => {
     const today = new Date();
     const formattedDate = today.toISOString().split("T")[0]; // Format the date as 'YYYY-MM-DD'
@@ -88,6 +89,7 @@ const PurchaseOperation = () => {
   const [filterSupplierData, setFilterSupplierData] = useState([]);
   const [searchSupplierName, setSearchSupplierName] = useState("");
   const tableRef = useRef();
+  const inputRefs = useRef(null);
   //date
 
   const today = new Date();
@@ -338,7 +340,7 @@ const PurchaseOperation = () => {
       );
 
       if (!ischecked) {
-        if (result) {
+        if (result) { 
           setProductTraceId(result.product_trace_id);
           setcategory(result.Category?.category_name);
           setProductName(result.name);
@@ -361,8 +363,26 @@ const PurchaseOperation = () => {
 
   const itemTotal =
     Math.round(parseFloat(purchase_price) * parseFloat(quantity)) || 0;
-  const discountAmount = itemTotal * (parseFloat(discount) / 100);
-  const totalWithDiscount = Math.round(itemTotal - discountAmount) || itemTotal;
+
+  useEffect(() => {
+    if (discountPrice) {
+      const discountPercentage = discountPrice
+        ? ((discountPrice / itemTotal) * 100).toFixed(1)
+        : "";
+      setDiscount(discountPercentage);
+    }
+  }, [discountPrice]);
+
+  const handleDiscount = (e) => {
+    const discountAmount = (
+      itemTotal *
+      (parseFloat(e.target.value) / 100)
+    ).toFixed(1);
+    setDiscountPrice(discountAmount);
+    setDiscount(e.target.value);
+  };
+
+  const totalWithDiscount = Math.floor(itemTotal - discountPrice) || itemTotal;
 
   useEffect(() => {
     if (vat && totalAmount) {
@@ -973,6 +993,7 @@ const PurchaseOperation = () => {
       setUnitId(item.unit_id);
     }
   };
+
   return (
     <>
       <ToastContainer position="top-center" autoClose={1000} />
@@ -1083,6 +1104,7 @@ const PurchaseOperation = () => {
                       Brand
                     </label>
                     <input
+                      ref={inputRefs}
                       type="text"
                       value={brand}
                       onChange={(e) => setBrand(e.target.value)}
@@ -1210,10 +1232,26 @@ const PurchaseOperation = () => {
                     <input
                       type="number"
                       value={discount}
-                      onChange={(e) => setDiscount(e.target.value)}
-                      className="input_field_supershop_purchase_long_discount"
+                      onChange={(e) => {
+                        handleDiscount(e);
+                      }}
+                      placeholder="percentage"
+                      className=""
+                      style={{ width: "4.5vw" }}
                     />
-                    <span>%</span>
+                    <span style={{ fontWeight: "bold", margin: " 0px 1px" }}>
+                      %
+                    </span>
+                    <input
+                      type="number"
+                      value={discountPrice}
+                      className="vat_amount_sale_page"
+                      placeholder="amount"
+                      onChange={(e) => {
+                        setDiscountPrice(e.target.value);
+                        setDiscount("");
+                      }}
+                    />
                   </div>
                   <div className="input_field_short_long">
                     <label className="label_field_supershop_purchase">

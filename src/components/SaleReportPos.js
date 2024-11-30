@@ -1,13 +1,25 @@
-import React from "react";
+import React, { useState } from "react";
 import "./salereportpos.css";
 // import Barcode from "react-barcode";
 export const SaleReportPos = React.forwardRef((props, ref) => {
   //   const { fixData, totalAmount, discount, VAT, paid } = props;
   const { rows, totalAmount, dateAquire, VAT, discount, invoiceNumber } = props;
+  const [currentDate, setCurrentDate] = useState(() => {
+    const today = new Date();
+    const formattedDate = today.toISOString().split("T")[0]; // Format the date as 'YYYY-MM-DD'
+    return formattedDate;
+  });
+  // eslint-disable-next-line no-unused-vars
+  // Update current time every second
+  const today = new Date();
+  const time = today.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 
+  const Employee = localStorage.getItem("username");
   return (
     <>
-      console.log(items);
       <div ref={ref} className="pos-pinter">
         <div className="container">
           <div className="receipt_header">
@@ -32,23 +44,23 @@ export const SaleReportPos = React.forwardRef((props, ref) => {
             </div>
 
             <div className="date_time_con">
-              <div>Invoice No:- {invoiceNumber}</div>
               <div className="date">
                 <span>Date : </span>
-                {dateAquire}
+                {currentDate}&nbsp;&nbsp;&nbsp;&nbsp;<span>Time: {time}</span>
               </div>
             </div>
-
+            <div className="separator">
+              <div>Invoice No : {invoiceNumber}</div>
+              <div>Sale By : {Employee}</div>
+            </div>
             <div className="items">
-              <span style={{ fontSize: "13px", fontWeight: "bold" }}>
-                Description
-              </span>
               <div className="hrline"></div>
               <table>
                 <thead>
                   <tr>
                     <th>Item</th>
                     <th>QTY</th>
+                    <th>Price</th>
                     <th>Item Total</th>
                   </tr>
                 </thead>
@@ -64,6 +76,7 @@ export const SaleReportPos = React.forwardRef((props, ref) => {
                           <td>
                             {item.quantity_no} {item.Unit ? item.Unit.unit : ""}
                           </td>
+                          <td>{item.sale_price}</td>
                           <td>
                             {(
                               parseFloat(item.sale_price || 0) *
@@ -76,19 +89,26 @@ export const SaleReportPos = React.forwardRef((props, ref) => {
                 </tbody>
 
                 <tfoot>
-                  <tr>
-                    <td>Vat</td>
-                    <td></td>
-                    <td>{VAT}</td>
-                  </tr>
-                  <tr>
-                    <td>Discount</td>
-                    <td></td>
-                    <td>{discount}</td>
-                  </tr>
-                 
+                  {VAT > 0 && (
+                    <tr>
+                      <td>Vat</td>
+                      <td></td>
+                      <td></td>
+                      <td>{VAT}</td>
+                    </tr>
+                  )}
+                  {discount > 0 && (
+                    <tr>
+                      <td>Discount</td>
+                      <td></td>
+                      <td></td>
+                      <td>{discount}</td>
+                    </tr>
+                  )}
+
                   <tr>
                     <td>Total</td>
+                    <td></td>
                     <td></td>
                     <td>{totalAmount}</td>
                   </tr>

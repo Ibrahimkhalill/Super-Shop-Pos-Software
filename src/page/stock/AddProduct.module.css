@@ -248,6 +248,9 @@
 
 .SearchDiv {
   display: flex;
+  align-items: center;
+  justify-content:space-between;
+  padding: 0px 10px;
 }
 .Header_text {
   display: flex;
@@ -261,7 +264,7 @@
 }
 
 .search_input_div {
-  width: 100%;
+  padding: 0px 10px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -271,10 +274,10 @@
   background-color: var(--bg);
   border: none;
   height: 3.7vh;
-  width: 30vw;
+  width: 26vw;
   margin: 0.5vh;
   border-radius: 0.5vw;
-  padding-left: 1vw;
+  padding-left: .5vw;
 }
 .search_input:focus {
   border-color: transparent;
@@ -285,8 +288,8 @@
   border: none;
   color: white;
   width: 6vw;
-  height: 3.2vh;
-  font-size: 1vw;
+  height: 3.7vh;
+  font-size: .9vw;
   border-radius: 0.5vw;
   margin-left: 0.5vw;
 

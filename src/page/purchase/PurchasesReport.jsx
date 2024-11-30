@@ -28,7 +28,7 @@ const PurchasesReport = () => {
   const [data, setData] = useState([]);
   const [rows, setRows] = useState([]);
   // eslint-disable-next-line no-unused-vars
-  const [fixData, setFixData] = useState([]);
+  const [error, setError] = useState("");
   const [unitData, setUnitData] = useState([]);
   const [categories, setCategories] = useState([]);
   const [TotalAmount, setTotalAmount] = useState(0);
@@ -36,6 +36,9 @@ const PurchasesReport = () => {
   const [searcProductName, setSearchProductName] = useState("");
   const [searcProductCode, setSearchProductCode] = useState("");
   const [Searchcategory, setSearchcategory] = useState("");
+  const [supplierData, setSupplierData] = useState([]);
+  const [searchSupplier, setSearchSupplier] = useState("");
+  const [paginationVisible, setPaginationVisible] = useState(true);
 
   const [product_code, setProductCode] = useState("");
   const [product_trace_id, setProductTraceId] = useState("");
@@ -78,21 +81,6 @@ const PurchasesReport = () => {
     FileSaver.saveAs(data, fileName + fileExtension);
   };
 
-  const componentRef = useRef();
-  // const handlePrint = useReactToPrint({
-  //   content: () => componentRef.current,
-  // });
-
-  const handlePrint = () => {
-    toast.dismiss();
-
-    // Show a new toast
-    toast("This feature will be added in next update!", {
-      autoClose: 1000, // Adjust the duration as needed (1 second = 1000 milliseconds)
-    });
-  };
-  // Check the value of scrollPosition
-
   useEffect(() => {
     if (tableRef.current !== null) {
       tableRef.current.scrollTo({ top: scrollPosition });
@@ -107,7 +95,6 @@ const PurchasesReport = () => {
       );
       const count = response_getPurchaseTranscatioData.data.count;
       setPurchaseTotalPage(Math.ceil(count / PurchasePageSize));
-      setLoading(false);
     } catch (error) {
       console.log(error.message);
     }
@@ -121,6 +108,7 @@ const PurchasesReport = () => {
       const filterSaleTransactions = response.data.rows;
       setRows((prevRows) => [...prevRows, ...filterSaleTransactions]);
       setPurchasePage((prevPage) => prevPage + 1);
+      setLoading(false);
     } catch (error) {
       console.log(error.message);
     }
@@ -138,15 +126,16 @@ const PurchasesReport = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   useEffect(() => {
-    if (PurchasePage <= PurchaseTotalpage) {
+    if (paginationVisible && PurchasePage <= PurchaseTotalpage) {
       handlePurchaseData(PurchasePage);
     }
-  }, [PurchasePage, PurchaseTotalpage, handlePurchaseData]);
+  }, [PurchasePage, PurchaseTotalpage, handlePurchaseData, paginationVisible]);
 
   const handelShowData = () => {
     setRows([]);
     setPurchasePage(1);
     handleResetAll();
+    setPaginationVisible(true);
   };
 
   useEffect(() => {
@@ -174,9 +163,18 @@ const PurchasesReport = () => {
         console.log(error);
       }
     };
+    const fetchSupplierData = async () => {
+      try {
+        const response = await axiosInstance.get("/contributorname/getAll");
+        setSupplierData(response.data);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      }
+    };
     fetchProductData();
     fetchDataUnit();
     fetchAllCategory();
+    fetchSupplierData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -230,6 +228,8 @@ const PurchasesReport = () => {
         return;
       }
       setLoading(true);
+      setPaginationVisible(false);
+
       const response = await axiosInstance.get(
         `/transactionsRouter/getTransactionProductName?operation_type_id=2&name=${searcProductName}`
       );
@@ -241,13 +241,11 @@ const PurchasesReport = () => {
       } else {
         setRows([]);
         setLoading(false);
-        toast.warning("Not found any Machting Data");
       }
     } catch (error) {
       console.log("Product Name Error", error);
       setLoading(false);
       setRows([]);
-      toast.warning("Not found any Machting Data");
     }
   };
 
@@ -266,23 +264,28 @@ const PurchasesReport = () => {
         return;
       }
       setLoading(true);
+      setPaginationVisible(false);
+
       const response = await axiosInstance.get(
         `/transactionsRouter/getTransactionProductCode?operation_type_id=2&product_code=${searcProductCode}`
       );
       if (response.status === 200) {
         const responseData = response.data;
-        setRows(responseData);
-        setLoading(false);
+        if (responseData.length === 0) {
+          setRows([]);
+          setLoading(false);
+        } else {
+          setRows(responseData);
+          setLoading(false);
+        }
       } else {
         setRows([]);
         setLoading(false);
-        toast.warning("Not found any Machting Data");
       }
     } catch (error) {
       console.log("Product Code Error", error);
       setLoading(false);
       setRows([]);
-      toast.warning("Not found any Machting Data");
     }
   };
 
@@ -301,6 +304,8 @@ const PurchasesReport = () => {
         return;
       }
       setLoading(true);
+      setPaginationVisible(false);
+
       const response = await axiosInstance.get(
         `/transactionsRouter/getTransactionProductCategory?operation_type_id=2&category_name=${Searchcategory}`
       );
@@ -309,7 +314,6 @@ const PurchasesReport = () => {
         if (responseData.length === 0) {
           setRows([]);
           setLoading(false);
-          toast.warning("Not found any Machting Data");
         } else {
           setRows(responseData);
           setLoading(false);
@@ -317,13 +321,11 @@ const PurchasesReport = () => {
       } else {
         setRows([]);
         setLoading(false);
-        toast.warning("Not found any Machting Data");
       }
     } catch (error) {
       console.log("Category Name Error", error);
       setLoading(false);
       setRows([]);
-      toast.warning("Not found any Machting Data");
     }
   };
 
@@ -352,6 +354,8 @@ const PurchasesReport = () => {
         return;
       }
       setLoading(true);
+      setPaginationVisible(false);
+
       const response = await axiosInstance.get(
         `/transactionsRouter/getTransactionProductFromDateToDate?startDate=${startDate}&endDate=${endDate}&operation_type_id=2`
       );
@@ -360,7 +364,6 @@ const PurchasesReport = () => {
         if (responseData.length === 0) {
           setRows([]);
           setLoading(false);
-          toast.warning("Not found any Machting Data");
         } else {
           setRows(responseData);
           setLoading(false);
@@ -368,7 +371,6 @@ const PurchasesReport = () => {
       } else {
         setRows([]);
         setLoading(false);
-        toast.warning("Not found any Machting Data");
       }
     } catch (error) {
       console.log("Date search Error", error);
@@ -391,6 +393,8 @@ const PurchasesReport = () => {
         return;
       }
       setLoading(true);
+      setPaginationVisible(false);
+
       const response = await axiosInstance.get(
         `/transactionsRouter/getTransactionProductOnlyDate?date=${date}&operation_type_id=2`
       );
@@ -399,7 +403,6 @@ const PurchasesReport = () => {
         if (responseData.length === 0) {
           setRows([]);
           setLoading(false);
-          toast.warning("Not found any Machting Data");
         } else {
           setRows(responseData);
           setLoading(false);
@@ -407,10 +410,44 @@ const PurchasesReport = () => {
       } else {
         setRows([]);
         setLoading(false);
-        toast.warning("Not found any Machting Data");
       }
     } catch (error) {
       console.log("Date search Error", error);
+      setLoading(false);
+    }
+  };
+  const handleSearchSupplier = async (e) => {
+    e.preventDefault();
+
+    if (!searchSupplier) {
+      toast.dismiss();
+      toast.warning("Supplier Required");
+      return;
+    }
+    const filter = supplierData.find(
+      (item) =>
+        item?.contributor_name.trim().toLocaleLowerCase() ===
+        searchSupplier.trim().toLocaleLowerCase()
+    );
+    const contributor_name_id = filter?.contributor_name_id || null;
+    setLoading(true);
+    setPaginationVisible(false);
+
+    const response = await axiosInstance.get(
+      `/transactionsRouter/getTransactionByContributorNameId?contributor_name_id=${contributor_name_id}&operation_type_id=2`
+    );
+
+    if (response.status === 200) {
+      const responseData = response.data;
+      if (responseData.length === 0) {
+        setRows([]);
+        setLoading(false);
+      } else {
+        setRows(responseData);
+        setLoading(false);
+      }
+    } else {
+      setRows([]);
       setLoading(false);
     }
   };
@@ -453,6 +490,7 @@ const PurchasesReport = () => {
     setCategory("");
     setUnit("");
     setActiveRowIndex(null);
+    setSearchSupplier("");
   };
 
   // useEffect(() => {
@@ -543,13 +581,13 @@ const PurchasesReport = () => {
         setScrollPosition(tableRef.current.scrollTop);
         toast.success("Successfully Purchase Updateded.");
 
-        const updatedData = data.map((item) =>
+        const updatedData = rows.map((item) =>
           item.transaction_id === response.data.transaction_id
             ? response.data
             : item
         );
-        setData(updatedData);
-        fetchData(updatedData);
+        setRows(updatedData);
+
         console.log(response.data);
       }
     } catch (error) {
@@ -627,16 +665,19 @@ const PurchasesReport = () => {
             const response = await axiosInstance.delete(
               `/transactionsRouter/deleteTransactionByID?transaction_id=${id}`
             );
-
             if (response.status === 200) {
               toast.dismiss();
               toast.success(`Successfully deleted transaction with ID ${id}`);
+              const updatedData = rows.filter(
+                // eslint-disable-next-line eqeqeq
+                (item) => item.transaction_id != transaction_id
+              );
+              setRows(updatedData);
               setActiveRowIndex(false);
             } else {
               console.log(`Error while deleting transaction with ID ${id}`);
             }
           }
-          fetchData();
           // Reset transaction_id after deletion
           setTranscation([]);
           handleReset();
@@ -673,17 +714,6 @@ const PurchasesReport = () => {
           <div className="invisible_div_purchase_report">
             <div className="input_field_purchase_report">
               <div className="purchases_report_input">
-                <div className="date_input_field_short_long_purchase_report">
-                  <label className="label_field_supershop_purchase">
-                    Date*
-                  </label>
-                  <input
-                    type="date"
-                    value={date}
-                    onChange={(e) => setDate(e.target.value)}
-                  />
-                  <button onClick={() => handledateSearch()}>Search</button>
-                </div>
                 <div className="input_field_short_long_purchse_report">
                   <label className="label_field_supershop_purchase">
                     Category*
@@ -703,34 +733,76 @@ const PurchasesReport = () => {
                   </datalist>
                   <button onClick={() => handleSearchcategory()}>Search</button>
                 </div>
-              </div>
-              <div className="purchases_report_input_date">
-                <div>
-                  <div className="date_input_field_short_long_purchase_report">
-                    <label className="label_field_supershop_purchase">
-                      From Date*
-                    </label>
-                    <input
-                      type="date"
-                      value={startDate}
-                      onChange={handleStartDateChange}
-                    />
-                  </div>
-                  <div className="date_input_field_short_long_purchase_report">
-                    <label className="label_field_supershop_purchase">
-                      To Date*
-                    </label>
-                    <input
-                      type="date"
-                      onChange={handleEndDateChange}
-                      value={endDate}
-                    />
-                  </div>
-                </div>
-                <div className="purchase_report_search_button">
-                  <button onClick={() => handleSearchDateStartend()}>
+                <div className="input_field_short_long_purchse_report">
+                  <label className="label_field_supershop_purchase">
+                    Supplier*
+                  </label>
+                  <input
+                    value={searchSupplier}
+                    onChange={(e) => setSearchSupplier(e.target.value)}
+                    list="supplier_list"
+                  />
+                  <datalist id="supplier_list" style={{ height: "5vw" }}>
+                    {supplierData.length > 0 &&
+                      supplierData.map((supplier, index) => {
+                        return (
+                          <option key={index}>
+                            {supplier.contributor_name}
+                          </option>
+                        );
+                      })}
+                  </datalist>
+                  <button onClick={(e) => handleSearchSupplier(e)}>
                     Search
                   </button>
+                </div>
+              </div>
+              <div className="purchases_report_input_date">
+                <div className="date_input_field_short_long_purchase_report">
+                  <label className="label_field_supershop_purchase">
+                    Date*
+                  </label>
+                  <input
+                    type="date"
+                    value={date}
+                    onChange={(e) => setDate(e.target.value)}
+                  />
+                  <button onClick={() => handledateSearch()}>Search</button>
+                </div>
+                <div className="date_search_input_purchase_report">
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "5px",
+                    }}
+                  >
+                    <div className="date_input_field_short_long_purchase_report">
+                      <label className="label_field_supershop_purchase">
+                        From Date*
+                      </label>
+                      <input
+                        type="date"
+                        value={startDate}
+                        onChange={handleStartDateChange}
+                      />
+                    </div>
+                    <div className="date_input_field_short_long_purchase_report">
+                      <label className="label_field_supershop_purchase">
+                        To Date*
+                      </label>
+                      <input
+                        type="date"
+                        onChange={handleEndDateChange}
+                        value={endDate}
+                      />
+                    </div>
+                  </div>
+                  <div className="purchase_report_search_button">
+                    <button onClick={() => handleSearchDateStartend()}>
+                      Search
+                    </button>
+                  </div>
                 </div>
               </div>
               <div className="purchases_report_input">
@@ -798,33 +870,38 @@ const PurchasesReport = () => {
                   width="64"
                   visible={true}
                 />
-              ) : (
-                <table className="" border={3} cellSpacing={2} cellPadding={5}>
-                  <thead>
-                    <tr>
-                      <th style={Color}>Serial</th>
-                      <th style={Color}>Invoice</th>
-                      <th style={Color}>Supplier</th>
-                      <th style={Color}>Category</th>
-                      <th style={Color}>Product Code</th>
-                      <th style={Color}>Product Name</th>
-                      <th style={Color}>Product Type</th>
-                      <th style={Color}>Brand</th>
-                      <th style={Color}>Quantity</th>
-                      <th style={Color}>Unit</th>
-                      <th style={Color}>Purchase Price</th>
-                      <th style={Color}>Discount</th>
-                      <th style={Color}>Item Total</th>
-                      <th style={Color}>Sale Price</th>
-                      <th style={Color}>Date</th>
-                      <th style={Color}>Shop</th>
-                      {activeRowIndex ? <th style={Color}>Select</th> : ""}
-                    </tr>
-                  </thead>
+              ) : rows.length > 0 ? (
+                <div>
+                  <table
+                    className=""
+                    border={3}
+                    cellSpacing={2}
+                    cellPadding={5}
+                  >
+                    <thead>
+                      <tr>
+                        <th style={Color}>Serial</th>
+                        <th style={Color}>Invoice</th>
+                        <th style={Color}>Supplier</th>
+                        <th style={Color}>Category</th>
+                        <th style={Color}>Product Code</th>
+                        <th style={Color}>Product Name</th>
+                        <th style={Color}>Product Type</th>
+                        <th style={Color}>Brand</th>
+                        <th style={Color}>Quantity</th>
+                        <th style={Color}>Unit</th>
+                        <th style={Color}>Purchase Price</th>
+                        <th style={Color}>Discount</th>
+                        <th style={Color}>Item Total</th>
+                        <th style={Color}>Sale Price</th>
+                        <th style={Color}>Date</th>
+                        {/* <th style={Color}>Shop</th> */}
+                        {activeRowIndex ? <th style={Color}>Select</th> : ""}
+                      </tr>
+                    </thead>
 
-                  <tbody>
-                    {rows &&
-                      rows.map((row, index) => (
+                    <tbody>
+                      {rows.map((row, index) => (
                         <tr
                           key={index}
                           className={
@@ -887,9 +964,9 @@ const PurchasesReport = () => {
                           <td onClick={() => handlerow(row, index)}>
                             {row.date.split("T")[0]}
                           </td>
-                          <td onClick={() => handlerow(row, index)}>
+                          {/* <td onClick={() => handlerow(row, index)}>
                             {row.ShopName?.shop_name}
-                          </td>
+                          </td> */}
                           {activeRowIndex ? (
                             <td onClick={() => handleAddId(row, index)}>
                               <input type="checkbox" />
@@ -899,8 +976,23 @@ const PurchasesReport = () => {
                           )}
                         </tr>
                       ))}
-                  </tbody>
-                </table>
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="not_found">
+                  <div>
+                    <img
+                      src="https://cdn-icons-png.flaticon.com/128/6146/6146689.png"
+                      alt=""
+                      width={70}
+                    />
+                  </div>
+                  Not found any machting data
+                  <p className="notFound_text">
+                    Instead, try searching this way
+                  </p>
+                </div>
               )}
             </div>
             <div className="input_field_short_total">

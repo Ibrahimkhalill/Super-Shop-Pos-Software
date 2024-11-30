@@ -232,23 +232,36 @@ const SaleReport = () => {
       return;
     }
     setIsLoading(true);
-    const response = await axiosInstance.get(
-      `/transactionsRouter/getTransactionProductCode?operation_type_id=1&product_code=${searchProductCode}`
-    );
-    if (response.status === 200) {
-      if (response.data.length > 0) {
-        const responseData = response.data;
-        setRows(responseData);
-        setPaginationVisible(false);
-        setButtonVisible(true);
-        setIsLoading(false);
+    try {
+      const response = await axiosInstance.get(
+        `/transactionsRouter/getTransactionProductCode?operation_type_id=1&product_code=${searchProductCode}`
+      );
+      if (response.status === 200) {
+        if (response.data.length > 0) {
+          const responseData = response.data;
+          setRows(responseData);
+          setPaginationVisible(false);
+          setButtonVisible(true);
+          setIsLoading(false);
+        } else {
+          setRows([]);
+
+          setPaginationVisible(false);
+          setButtonVisible(true);
+          setIsLoading(false);
+        }
       } else {
         setRows([]);
-        toast.warning("Not Matching Any Data");
         setPaginationVisible(false);
         setButtonVisible(true);
         setIsLoading(false);
       }
+    } catch {
+      setRows([]);
+      setPaginationVisible(false);
+      setButtonVisible(true);
+      setIsLoading(false);
+      console.error("Error Product Code Search");
     }
   };
 
@@ -275,7 +288,6 @@ const SaleReport = () => {
           setIsLoading(false);
         } else {
           setRows([]);
-          toast.warning("Not Matching Any Data");
           setPaginationVisible(false);
           setButtonVisible(true);
           setIsLoading(false);
@@ -308,7 +320,7 @@ const SaleReport = () => {
           setIsLoading(false);
         } else {
           setRows([]);
-          toast.warning("Not Matching Any Data");
+
           setPaginationVisible(false);
           setButtonVisible(true);
           setIsLoading(false);
@@ -348,7 +360,7 @@ const SaleReport = () => {
           setIsLoading(false);
         } else {
           setRows([]);
-          toast.warning("Not Matching Any Data");
+
           setPaginationVisible(false);
           setButtonVisible(true);
           setIsLoading(false);
@@ -380,7 +392,7 @@ const SaleReport = () => {
               (data) => data.ProductTrace?.product_code === searchProductCode
             );
             setRows(filter);
-            toast.warning("Not Matching Any Data");
+
             setPaginationVisible(false);
             setButtonVisible(true);
             setIsLoading(false);
@@ -392,7 +404,7 @@ const SaleReport = () => {
           }
         } else {
           setRows([]);
-          toast.warning("Not Matching Any Data");
+
           setPaginationVisible(false);
           setButtonVisible(true);
           setIsLoading(false);
@@ -770,7 +782,7 @@ const SaleReport = () => {
                 onChange={(event) => setSearchProductCode(event.target.value)}
                 list="barcode"
               />
-              <datalist autoComplete="off" id="barcode" >
+              <datalist autoComplete="off" id="barcode">
                 {distinctProductCode.length > 0 &&
                   distinctProductCode.map((items, index) => {
                     return <option key={index}>{items.product_code}</option>;
@@ -806,77 +818,93 @@ const SaleReport = () => {
           </div>
         ) : (
           <>
-            <div
-              className="container_table_supershop_sale_report"
-              ref={tableRef}
-            >
-              <table>
-                <tr>
-                  <th>Invoice No</th>
-                  <th>BarCode</th>
-                  <th>Product Name</th>
-                  <th>Product Type</th>
-                  <th>Sale Price</th>
-                  <th>Quantity</th>
-                  <th>Discount</th>
-                  <th>Item Total</th>
-                  <th>Sale Date</th>
-                  <th>Unit</th>
-                  <th>Shop Name</th>
-                </tr>
-                <tbody>
-                  {rows.length > 0 &&
-                    rows.map((item) => (
-                      <tr
-                        key={item.transaction_id}
-                        onClick={() => hendleDataInputField(item)}
-                        className={
-                          selectedID === item.transaction_id
-                            ? "rows selected"
-                            : "rows"
-                        }
-                        tabindex="0"
-                      >
-                        <td>{item.invoice_no}</td>
+            {rows.length > 0 ? (
+              <>
+                <div
+                  className="container_table_supershop_sale_report"
+                  ref={tableRef}
+                >
+                  <table>
+                    <tr>
+                      <th>Invoice No</th>
+                      <th>BarCode</th>
+                      <th>Product Name</th>
+                      <th>Product Type</th>
+                      <th>Sale Price</th>
+                      <th>Quantity</th>
+                      <th>Discount</th>
+                      <th>Item Total</th>
+                      <th>Sale Date</th>
+                      <th>Unit</th>
+                      <th>Shop Name</th>
+                    </tr>
+                    <tbody>
+                      {rows.length > 0 &&
+                        rows.map((item) => (
+                          <tr
+                            key={item.transaction_id}
+                            onClick={() => hendleDataInputField(item)}
+                            className={
+                              selectedID === item.transaction_id
+                                ? "rows selected"
+                                : "rows"
+                            }
+                            tabindex="0"
+                          >
+                            <td>{item.invoice_no}</td>
 
-                        <td>
-                          {item.ProductTrace
-                            ? item.ProductTrace.product_code
-                            : ""}
-                        </td>
-                        <td>
-                          {item.ProductTrace ? item.ProductTrace.name : ""}
-                        </td>
-                        <td>
-                          {item.ProductTrace ? item.ProductTrace.type : ""}
-                        </td>
-                        <td>{item.sale_price}</td>
-                        <td>{item.quantity_no}</td>
-                        <td>{item.discount}%</td>
-                        <td>
-                          {(
-                            parseFloat(item.sale_price || 0) *
-                            parseFloat(item.quantity_no || 0) *
-                            (1 - parseFloat(item.discount || 0) / 100)
-                          ).toFixed(1)}
-                        </td>
-                        <td className="hover-effect">
-                          {item.date ? item.date.split("T")[0] : ""}
-                        </td>
-                        <td className="hover-effect">
-                          {item.Unit ? item.Unit.unit : ""}
-                        </td>
-                        <td className="hover-effect">
-                          {item.ShopName ? item.ShopName.shop_name : ""}
-                        </td>
-                      </tr>
-                    ))}
-                </tbody>
-              </table>
-            </div>
-            {paginationVisible && (
-              <div className="pagination-buttons">
-                {renderPaginationButtons()}
+                            <td>
+                              {item.ProductTrace
+                                ? item.ProductTrace.product_code
+                                : ""}
+                            </td>
+                            <td>
+                              {item.ProductTrace ? item.ProductTrace.name : ""}
+                            </td>
+                            <td>
+                              {item.ProductTrace ? item.ProductTrace.type : ""}
+                            </td>
+                            <td>{item.sale_price}</td>
+                            <td>{item.quantity_no}</td>
+                            <td>{item.discount}%</td>
+                            <td>
+                              {(
+                                parseFloat(item.sale_price || 0) *
+                                parseFloat(item.quantity_no || 0) *
+                                (1 - parseFloat(item.discount || 0) / 100)
+                              ).toFixed(1)}
+                            </td>
+                            <td className="hover-effect">
+                              {item.date ? item.date.split("T")[0] : ""}
+                            </td>
+                            <td className="hover-effect">
+                              {item.Unit ? item.Unit.unit : ""}
+                            </td>
+                            <td className="hover-effect">
+                              {item.ShopName ? item.ShopName.shop_name : ""}
+                            </td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
+                {paginationVisible && (
+                  <div className="pagination-buttons">
+                    {renderPaginationButtons()}
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="not_found">
+                <div>
+                  <img
+                    src="https://cdn-icons-png.flaticon.com/128/6146/6146689.png"
+                    alt=""
+                    width={70}
+                  />
+                </div>
+                Not found any machting data
+                <p className="notFound_text">Instead, try searching this way</p>
               </div>
             )}
           </>

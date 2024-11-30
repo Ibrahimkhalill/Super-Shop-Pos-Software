@@ -198,6 +198,7 @@
   display: flex;
   flex-direction: row;
   justify-content: space-between;
+  align-items: center;
   column-gap: 2vh;
   width: 98vw;
   height: 32.5vh;
@@ -228,7 +229,7 @@
   flex-direction: column;
   border-radius: 2vh;
   padding-left: 1.4vw;
-  margin: 0.5vw 0vw 0vw 0.5vw;
+  margin: 0vw 0vw 0vw 0.5vw;
   padding-top: 1vw;
   row-gap: 1vh;
   box-shadow: rgba(0, 0, 0, 0.3) 0px 19px 38px,
@@ -236,7 +237,7 @@
   border-radius: 2vh;
   transition: 0.5s;
   background-color: rgba(136, 179, 154, 1);
-  height: 28.7vh;
+  height: 29.7vh;
   width: 67vw;
   animation-name: effectLeft;
   animation-duration: 1s;
@@ -354,7 +355,7 @@
   align-items: center;
   justify-content: center;
   margin-left: 5vw;
-  margin-top: 1vw;
+  /* margin-top: 1vw; */
   font-weight: bold;
   row-gap: 0.5vw;
 }
@@ -391,10 +392,9 @@
   padding-top: 0.2vw;
   padding-right: 1vw;
   margin-right: 0.5vw;
-  margin-top: 0.5vw;
-  column-gap: 3vw;
+  
   width: 23vw;
-  height: 30vh;
+  height: 29.6vh;
   background-color: rgba(136, 179, 154, 1);
   box-shadow: rgba(0, 0, 0, 0.3) 0px 19px 38px,
     rgba(0, 0, 0, 0.22) 0px 15px 12px;

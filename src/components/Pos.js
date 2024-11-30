@@ -24,10 +24,12 @@ export const PosInvoice = React.forwardRef((props, ref) => {
     return formattedDate;
   });
   // eslint-disable-next-line no-unused-vars
-  const [currentTime, setCurrentTime] = useState(new Date());
   // Update current time every second
   const today = new Date();
-  const time = today.toLocaleTimeString();
+  const time = today.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
   // setCurrentTime(new Date());
   return (
     <>

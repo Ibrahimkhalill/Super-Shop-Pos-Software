@@ -128,7 +128,7 @@ tfoot tr:first-child td:last-child {
 
 .date_time_con {
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
   column-gap: 20px;
 }
 

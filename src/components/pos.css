@@ -143,6 +143,7 @@ tfoot tr:first-child td:last-child {
 }
 
 .date_time_con {
+
   display: flex;
   justify-content: center;
   column-gap: 20px;
